@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FT Winding</title>
+    <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.8.0/math.min.js"></script> <!-- Optional but might be useful, though strict JS is fine -->
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar Toggle Button -->
+        <button id="toggle-sidebar-btn" onclick="toggleSidebar()" title="Toggle Sidebar">
+             <span class="material-symbols-outlined">chevron_left</span>
+        </button>
+
+        <!-- Sidebar Controls -->
+        <aside class="sidebar" id="main-sidebar">
+            <header>
+                <h1>FT WINDING</h1>
+                <p>Signal analysis & Winding</p>
+            </header>
+
+            <!-- Signal Components (Collapsible) -->
+            <div class="section-header-collapsible" data-target="components-wrapper">
+                <div class="section-title" style="border:none; margin:0; padding:0;">Signal Components</div>
+                <span class="material-symbols-outlined dropdown-icon">expand_more</span>
+            </div>
+            
+            <div id="components-wrapper" class="collapsible-content expanded">
+                <div class="collapsible-inner">
+                    <div id="components-container">
+                        <!-- Components injected here -->
+                    </div>
+                    <button id="add-component-btn" class="action-button">
+                        <span class="material-symbols-outlined">add</span> ADD SINE WAVE
+                    </button>
+                    <!-- Note: Real Mode Envelopes will be auto-injected in JS since we forced Real Mode -->
+                </div>
+            </div>
+
+            <!-- Audio Settings (Collapsible) -->
+            <div class="section-header-collapsible" data-target="audio-wrapper">
+                <div class="section-title" style="border:none; margin:0; padding:0;">Audio Settings</div>
+                <span class="material-symbols-outlined dropdown-icon">expand_more</span>
+            </div>
+
+            <div id="audio-wrapper" class="collapsible-content expanded">
+                <div class="collapsible-inner">
+                    <div class="control-group">
+                        <div class="control-label">Freq Multiplier (x<span id="audio-mult-display">50</span>)</div>
+                        <input type="range" id="audio-mult-slider" min="10" max="200" value="50" step="10">
+                        <div style="font-size: 0.65rem; color: #888; margin-top: 4px; line-height: 1.2;">
+                            Multiplies simulation frequency to make it audible.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Visualization (Collapsible) -->
+            <div class="section-header-collapsible" data-target="visualization-wrapper">
+                <div class="section-title" style="border:none; margin:0; padding:0;">Visualization</div>
+                <span class="material-symbols-outlined dropdown-icon">expand_more</span>
+            </div>
+
+            <div id="visualization-wrapper" class="collapsible-content expanded">
+                <div class="collapsible-inner">
+                    <div class="control-group" style="flex-direction: row; justify-content: space-between; align-items: center;">
+                        <div class="control-label">Show Grid & Axis</div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="axis-toggle" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+
+                    <div class="control-group" style="margin-top: 12px; margin-bottom: 12px;">
+                        <div class="control-label" id="display-segment-label">Display Segment (0.00s - 5.00s)</div>
+                        <div class="double-slider-wrapper" id="display-segment-slider">
+                            <div class="double-slider-track"></div>
+                            <div class="double-slider-fill" id="display-segment-fill" style="left: 0%; width: 100%;"></div>
+                            <input type="range" class="double-slider-input" id="display-start-input" min="0" max="5" step="0.01" value="0" oninput="updateDisplaySegment('start', this.value)">
+                            <input type="range" class="double-slider-input" id="display-end-input" min="0" max="5" step="0.01" value="5" oninput="updateDisplaySegment('end', this.value)">
+                        </div>
+                    </div>
+
+                     <div class="control-group" style="margin-top: 12px; margin-bottom: 12px;">
+                        <div class="control-label" id="freq-segment-label">Freq Segment (Auto)</div>
+                        <div class="double-slider-wrapper" id="freq-segment-slider">
+                            <div class="double-slider-track"></div>
+                            <div class="double-slider-fill" id="freq-segment-fill" style="left: 0%; width: 100%;"></div>
+                            <input type="range" class="double-slider-input" id="freq-start-input" min="0" max="100" step="0.5" value="0" oninput="updateFreqSegment('start', this.value)">
+                            <input type="range" class="double-slider-input" id="freq-end-input" min="0" max="100" step="0.5" value="100" oninput="updateFreqSegment('end', this.value)">
+                        </div>
+                    </div>
+                    
+                    <div class="control-group">
+                        <div class="control-label">Transform Sampling (Resolution)</div>
+                        <input type="range" id="fft-sampling-slider" min="1" max="4" value="1" step="0.5">
+                    </div>
+
+                    <div class="control-group" style="flex-direction: row; justify-content: space-between; align-items: center; margin-top: 8px;">
+                        <div class="control-label">Transform Smoothing</div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="fft-smoothing-toggle">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+
+                    <div class="control-group" style="flex-direction: row; justify-content: space-between; align-items: center; margin-top: 8px;">
+                        <div class="control-label">Show Real/Imag Traces</div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="reim-toggle">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+            
+            <div style="flex: 1;"></div> <!-- Spacer to push Reset down -->
+            
+            <div style="margin-top: 40px; border-top: 1px solid var(--color-border); padding-top: 20px;">
+                 <button id="reset-btn" class="secondary" style="width: 100%;">
+                    <span class="material-symbols-outlined">restart_alt</span> RESET APP
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Plot Area -->
+        <main class="plots-wrapper">
+            <!-- Top: Original Signal -->
+            <div class="plot-container" id="signal-plot-container" style="flex: 1;">
+                <div class="plot-label">ORIGINAL SIGNAL (TIME DOMAIN) [s]</div>
+                <!-- Old info overlay removed -->
+                <div class="plot-controls">
+                    <div class="time-label-control" id="time-info">Time: 0.50s</div>
+                    <button class="icon-btn" onclick="playWithResume()" id="btn-play-original" title="Play Original">
+                        <span class="material-symbols-outlined">play_arrow</span>
+                    </button>
+                </div>
+                <canvas id="signal-canvas"></canvas>
+            </div>
+
+            <!-- Middle: Split View -->
+            <div class="split-plot-row" style="flex: 1.5; display: flex; gap: 24px; min-height: 250px;">
+                <!-- Middle Left: 3D Transform -->
+                <div class="plot-container" id="transform-3d-container" style="flex: 1;">
+                    <div class="plot-label">3D FOURIER TRANSFORM</div>
+                    <div class="plot-controls" style="top: 12px; right: 12px;"> 
+                        <button class="icon-btn" onclick="toggleFocusMode()" title="Toggle Focus Mode" style="width: 24px; height: 24px;">
+                             <span class="material-symbols-outlined" id="focus-icon" style="font-size: 16px;">fullscreen</span>
+                        </button>
+                    </div>
+                    <button class="reset-view-btn" onclick="resetView('3d')" title="Reset 3D View">
+                        <span class="material-symbols-outlined" style="font-size: 16px;">center_focus_strong</span>
+                    </button>
+                    <canvas id="transform-3d-canvas" style="cursor: grab;"></canvas>
+                    <div id="hint-3d" style="position: absolute; bottom: 8px; left: 8px; font-size: 0.65rem; color: #888; pointer-events: none; transition: opacity 0.5s;">Drag to Rotate • Ctrl+Drag to Pan • Scroll to Zoom</div>
+                </div>
+                
+                <!-- Middle Right: R-I Projection -->
+                <div class="plot-container" id="ri-plot-container" style="flex: 1;">
+                    <div class="plot-label">R-I TRANSFORM PROJECTION & WINDING CENTER</div>
+                    <button class="reset-view-btn" onclick="resetView('ri')" title="Reset R-I View">
+                         <span class="material-symbols-outlined" style="font-size: 16px;">center_focus_strong</span>
+                    </button>
+                    <canvas id="ri-canvas" style="cursor: grab;"></canvas>
+                    <div id="hint-ri" style="position: absolute; bottom: 8px; left: 8px; font-size: 0.65rem; color: #888; pointer-events: none; transition: opacity 0.5s;">Drag to Pan • Scroll to Zoom</div>
+                </div>
+            </div>
+
+            <!-- Bottom: Absolute Value Transform -->
+            <div class="plot-container" id="mag-plot-container" style="flex: 1;">
+                <div class="plot-label">FOURIER TRANSFORM MAGNITUDE (|F(w)|)</div>
+                 <div class="plot-info-overlay" id="freq-info">Freq: 0.0 Hz</div>
+                <canvas id="abs-transform-canvas"></canvas>
+            </div>
+        </main>
+    </div>
+
+    <script src="js/main.js"></script>
+</body>
+</html>
