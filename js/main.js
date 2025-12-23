@@ -40,8 +40,23 @@ const state = {
     lastMouse: { x: 0, y: 0 },
     isFocusMode: false,
     showSurface: false,
-    isSidebarCollapsed: false
+    isSidebarCollapsed: false,
+    // Memory Optimization Buffers
+    buffers: {
+        complexSignal: [],
+        displaySignal: [],
+        fftEven: [],
+        fftOdd: []
+    }
 };
+
+// Memory Helper
+function ensureObjectArray(arr, size, factory) {
+    while (arr.length < size) {
+        arr.push(factory());
+    }
+    return arr;
+}
 
 const elements = {
     componentsContainer: document.getElementById('components-container'),
@@ -125,8 +140,6 @@ function saveState() {
         fftSampling: state.fftSampling,
         fftSmoothing: state.fftSmoothing,
         view3d: state.view3d,
-        viewRI: state.viewRI,
-        showReIm: state.showReIm,
         viewRI: state.viewRI,
         showReIm: state.showReIm,
         showSurface: state.showSurface,
@@ -886,46 +899,101 @@ function getSignalValueAt(t) {
     return val;
 }
 
-function fft(data) {
-    const N = data.length;
-    if (N <= 1) return data;
-    const even = fft(data.filter((_, i) => i % 2 === 0));
-    const odd = fft(data.filter((_, i) => i % 2 === 1));
-    const result = new Array(N);
-    for (let k = 0; k < N / 2; k++) {
-        const angle = -2 * Math.PI * k / N;
-        const re = Math.cos(angle);
-        const im = Math.sin(angle);
-        const oddRe = odd[k].re * re - odd[k].im * im;
-        const oddIm = odd[k].re * im + odd[k].im * re;
-        result[k] = {
-            re: even[k].re + oddRe,
-            im: even[k].im + oddIm
-        };
-        result[k + N / 2] = {
-            re: even[k].re - oddRe,
-            im: even[k].im - oddIm
-        };
+const fftBitRev = new Uint32Array(16384); // Pre-allocate bit reversal table
+let fftBitRevN = 0;
+
+function fft(data, bufferLike, len) {
+    // data: input array of {re, im}
+    // bufferLike: optional reuse array for output
+    // len: explicit length to process (avoids slicing)
+    
+    const N = len || data.length;
+    
+    // Check/Update Bit Reversal Table
+    if (N !== fftBitRevN) {
+        fftBitRevN = N;
+        const bits = Math.log2(N);
+        for (let i = 0; i < N; i++) {
+            let n = i;
+            let r = 0;
+            for (let b = 0; b < bits; b++) {
+                r = (r << 1) | (n & 1);
+                n >>= 1;
+            }
+            fftBitRev[i] = r;
+        }
     }
-    return result;
+
+    let output;
+    if (bufferLike) output = bufferLike;
+    else output = new Array(N);
+
+    // Initial Reordering
+    for (let i = 0; i < N; i++) {
+        const rev = fftBitRev[i];
+        const d = data[rev];
+        if (bufferLike) {
+             output[i].re = d.re;
+             output[i].im = d.im;
+        } else {
+             output[i] = { re: d.re, im: d.im };
+        }
+    }
+    
+    // Butterfly Ops
+    for (let len = 2; len <= N; len <<= 1) {
+        const half = len >> 1;
+        const angleBase = -2 * Math.PI / len;
+        
+        const wBaseRe = Math.cos(angleBase);
+        const wBaseIm = Math.sin(angleBase);
+        
+        for (let i = 0; i < N; i += len) {
+            let wRe = 1;
+            let wIm = 0;
+            for (let j = 0; j < half; j++) {
+                const u = output[i + j];
+                const v = output[i + j + half];
+                
+                const tRe = wRe * v.re - wIm * v.im;
+                const tIm = wRe * v.im + wIm * v.re;
+                
+                v.re = u.re - tRe;
+                v.im = u.im - tIm;
+                u.re = u.re + tRe;
+                u.im = u.im + tIm;
+                
+                const nextWRe = wRe * wBaseRe - wIm * wBaseIm;
+                const nextWIm = wRe * wBaseIm + wIm * wBaseRe;
+                wRe = nextWRe;
+                wIm = nextWIm;
+            }
+        }
+    }
+    return output;
 }
 
-function drawSpline(ctx, pts, useSmoothing) {
-    if (pts.length < 2) return;
+function drawSpline(ctx, pts, useSmoothing, limit) {
+    const len = limit !== undefined ? limit : pts.length;
+    if (len < 2) return;
+    
     if (!useSmoothing) {
-        pts.forEach((p, i) => {
-            if (i == 0) ctx.moveTo(p.x, p.y);
+        for (let i = 0; i < len; i++) {
+            const p = pts[i];
+            if (i === 0) ctx.moveTo(p.x, p.y);
             else ctx.lineTo(p.x, p.y);
-        });
+        }
         return;
     }
+    
     ctx.moveTo(pts[0].x, pts[0].y);
-    for (let i = 1; i < pts.length - 1; i++) {
+    for (let i = 1; i < len - 1; i++) {
         const xc = (pts[i].x + pts[i + 1].x) / 2;
         const yc = (pts[i].y + pts[i + 1].y) / 2;
         ctx.quadraticCurveTo(pts[i].x, pts[i].y, xc, yc);
     }
-    ctx.lineTo(pts[pts.length - 1].x, pts[pts.length - 1].y);
+    // Connect to last point
+    ctx.lineTo(pts[len - 1].x, pts[len - 1].y);
 }
 
 function drawAxis(ctx, w, h, xRange, yRange, suffixX, suffixY) {
@@ -988,24 +1056,39 @@ function animate() {
     if (state.view3d.hasInteracted && elements.hints.view3d) elements.hints.view3d.style.opacity = 0;
     if (state.viewRI.hasInteracted && elements.hints.viewRI) elements.hints.viewRI.style.opacity = 0;
     
-    const complexSignal = new Array(N_FFT);
+    // Reuse complexSignal buffer
+    const complexSignal = ensureObjectArray(state.buffers.complexSignal, N_FFT, () => ({ re: 0, im: 0 }));
+    
     for (let i = 0; i < N_Base; i++) {
         const t = i / state.sampleRate;
-        complexSignal[i] = { re: getSignalValueAt(t), im: 0 };
+        // Update in-place
+        complexSignal[i].re = getSignalValueAt(t);
+        complexSignal[i].im = 0;
     }
     for (let i = N_Base; i < N_FFT; i++) {
-        complexSignal[i] = { re: 0, im: 0 };
+        complexSignal[i].re = 0;
+        complexSignal[i].im = 0;
     }
     
-    let fftResult = fft(complexSignal);
+    // Use full buffer with explicit length to avoid slicing allocation
+    if (!state.buffers.fftOutput) state.buffers.fftOutput = [];
+    const fftOutBuf = ensureObjectArray(state.buffers.fftOutput, N_FFT, () => ({re:0, im:0}));
     
-    const displaySignal = [];
+    // fftResult aliases fftBuffer
+    // complexSignal is passed directly (no slice)
+    let fftResult = fft(complexSignal, fftOutBuf, N_FFT);
+    
+    // Reuse displaySignal buffer
+    const displaySignal = ensureObjectArray(state.buffers.displaySignal, N_Base, () => ({ t: 0, val: 0 }));
     for (let i = 0; i < N_Base; i++) {
-        displaySignal.push({ t: i / state.sampleRate, val: complexSignal[i].re });
+        displaySignal[i].t = i / state.sampleRate;
+        displaySignal[i].val = complexSignal[i].re;
     }
-    lastSignalData = displaySignal;
+    lastSignalData = displaySignal; // Reference
 
     // Winding
+    // We can't easily reuse windingPoints because it's re-created here.
+    // But it's small (3000). Let's optimize if needed.
     const windingPoints = [];
     let comRe = 0, comIm = 0;
     const numSteps = 3000;
