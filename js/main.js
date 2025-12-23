@@ -38,7 +38,8 @@ const state = {
     view3d: { rotX: -0.5, rotY: 0.5, scale: 1.0, isRotating: false, panX: 0, panY: 0, isPanning: false, hasInteracted: false },
     viewRI: { panX: 0, panY: 0, scale: 1.0, isPanning: false, hasInteracted: false },
     lastMouse: { x: 0, y: 0 },
-    isFocusMode: false
+    isFocusMode: false,
+    showSurface: false
 };
 
 const elements = {
@@ -47,6 +48,7 @@ const elements = {
     addComponentBtn: document.getElementById('add-component-btn'),
     axisToggle: document.getElementById('axis-toggle'),
     reimToggle: document.getElementById('reim-toggle'),
+    surfaceToggle: document.getElementById('surface-toggle'),
     resetBtn: document.getElementById('reset-btn'),
     audioMultSlider: document.getElementById('audio-mult-slider'),
     audioMultDisplay: document.getElementById('audio-mult-display'),
@@ -124,6 +126,7 @@ function saveState() {
         showReIm: state.showReIm,
         viewRI: state.viewRI,
         showReIm: state.showReIm,
+        showSurface: state.showSurface,
         viewAbs: state.viewAbs,
         isFocusMode: state.isFocusMode
     };
@@ -147,6 +150,7 @@ function loadState() {
             if (parsed.zoomEnd !== undefined) state.zoomEnd = parsed.zoomEnd;
             if (parsed.showAxis !== undefined) state.showAxis = parsed.showAxis;
             if (parsed.showReIm !== undefined) state.showReIm = parsed.showReIm;
+            if (parsed.showSurface !== undefined) state.showSurface = parsed.showSurface;
             state.fftSampling = parsed.fftSampling || 1;
             state.fftSmoothing = !!parsed.fftSmoothing;
             if (parsed.view3d) state.view3d = parsed.view3d;
@@ -155,6 +159,7 @@ function loadState() {
 
             elements.axisToggle.checked = state.showAxis;
             if (elements.reimToggle) elements.reimToggle.checked = state.showReIm;
+            if (elements.surfaceToggle) elements.surfaceToggle.checked = state.showSurface;
             elements.audioMultSlider.value = state.audioMultiplier;
             elements.audioMultDisplay.innerText = state.audioMultiplier;
             if (elements.fftSamplingSlider) elements.fftSamplingSlider.value = state.fftSampling;
@@ -302,6 +307,7 @@ function setupListeners() {
     elements.resetBtn.addEventListener('click', () => { localStorage.removeItem(STORAGE_KEY); location.reload(); });
     elements.axisToggle.addEventListener('change', (e) => { state.showAxis = e.target.checked; saveState(); });
     if (elements.reimToggle) elements.reimToggle.addEventListener('change', (e) => { state.showReIm = e.target.checked; saveState(); });
+    if (elements.surfaceToggle) elements.surfaceToggle.addEventListener('change', (e) => { state.showSurface = e.target.checked; saveState(); });
     elements.audioMultSlider.addEventListener('input', (e) => { state.audioMultiplier = parseInt(e.target.value); elements.audioMultDisplay.innerText = state.audioMultiplier; saveState(); });
     if (elements.fftSamplingSlider) elements.fftSamplingSlider.addEventListener('input', (e) => { state.fftSampling = parseFloat(e.target.value); saveState(); });
     if (elements.fftSmoothingToggle) elements.fftSmoothingToggle.addEventListener('change', (e) => { state.fftSmoothing = e.target.checked; saveState(); });
@@ -650,7 +656,7 @@ function animate() {
 
 function drawSignalPlot(ctx, data, canvas) {
     const w = canvas.width / (window.devicePixelRatio || 1); const h = canvas.height / (window.devicePixelRatio || 1); const yRange = [-2, 2];
-    if (state.showAxis) { drawAxis(ctx, w, h, [state.zoomStart, state.zoomEnd], yRange, 's', ''); const y0 = h / 2; ctx.beginPath(); ctx.strokeStyle = '#eee'; ctx.lineWidth = 1; ctx.moveTo(0, y0); ctx.lineTo(w, y0); ctx.stroke(); }
+    if (state.showAxis) { drawAxis(ctx, w, h, [state.zoomStart, state.zoomEnd], yRange, ' s', ''); const y0 = h / 2; ctx.beginPath(); ctx.strokeStyle = '#eee'; ctx.lineWidth = 1; ctx.moveTo(0, y0); ctx.lineTo(w, y0); ctx.stroke(); }
     
     // Use the full data array logic but optimized loop
     // Convert absolute time to x
@@ -728,8 +734,29 @@ function draw3DPlot(ctx, fft, canvas, maxFreq, N_FFT) {
     ctx.beginPath(); ctx.lineWidth = 0.5; ctx.strokeStyle = '#e0e0e0';[[0, 1], [0, 2], [1, 3], [2, 3], [4, 5], [4, 6], [5, 7], [6, 7], [0, 4], [1, 5], [2, 6], [3, 7]].forEach(l => { ctx.moveTo(corners[l[0]].x, corners[l[0]].y); ctx.lineTo(corners[l[1]].x, corners[l[1]].y); }); ctx.stroke();
     const origin = project3D(0, 0, 0, cx, cy, scale); const xAxis = project3D(1.2, 0, 0, cx, cy, scale); const yTop = project3D(0, 1.1, 0, cx, cy, scale); const zTop = project3D(0, 0, 1.1, cx, cy, scale);
     ctx.lineWidth = 1; ctx.strokeStyle = '#ccc'; ctx.beginPath(); ctx.moveTo(origin.x, origin.y); ctx.lineTo(xAxis.x, xAxis.y); ctx.moveTo(origin.x, origin.y); ctx.lineTo(yTop.x, yTop.y); ctx.moveTo(origin.x, origin.y); ctx.lineTo(zTop.x, zTop.y); ctx.stroke();
-    ctx.fillStyle = '#888'; ctx.font = '10px monospace'; ctx.fillText('Freq', xAxis.x, xAxis.y); ctx.fillText('Re', yTop.x, yTop.y); ctx.fillText('Im', zTop.x, zTop.y);
-    if (state.showAxis) { const t1 = project3D(1.0, 0, 0, cx, cy, scale); ctx.fillText(`${maxFreq.toFixed(0)}Hz`, t1.x, t1.y + 10); ctx.beginPath(); ctx.moveTo(t1.x, t1.y - 2); ctx.lineTo(t1.x, t1.y + 2); ctx.stroke(); }
+    ctx.fillStyle = '#888'; ctx.font = '10px monospace'; ctx.fillText(state.showAxis ? 'Freq [Hz]' : 'Freq', xAxis.x, xAxis.y); ctx.fillText('Re', yTop.x, yTop.y); ctx.fillText('Im', zTop.x, zTop.y);
+    if (state.showAxis) { 
+        // Draw multiple notches along Frequency Axis
+        const numNotches = 5;
+        ctx.fillStyle = '#888'; 
+        ctx.font = '9px monospace';
+        for (let i = 1; i <= numNotches; i++) {
+             const t = i / numNotches; 
+             const freqVal = t * maxFreq;
+             const p = project3D(t, 0, 0, cx, cy, scale);
+             
+             // Tick
+             ctx.beginPath();
+             ctx.moveTo(p.x, p.y - 2);
+             ctx.lineTo(p.x, p.y + 2);
+             ctx.stroke();
+             
+             // Label
+             const txt = freqVal.toFixed(0);
+             const tw = ctx.measureText(txt).width;
+             ctx.fillText(txt, p.x - tw/2, p.y + 12);
+        }
+    }
     const dF = state.sampleRate / N_FFT; const maxK = Math.min(Math.ceil(maxFreq / dF), fft.length); const N_Base = (2048);
     const pts = []; const pReal = []; const pImag = [];
     const pRealWall = []; const pImagWall = [];
@@ -739,6 +766,59 @@ function draw3DPlot(ctx, fft, canvas, maxFreq, N_FFT) {
         pReal.push(project3D(x, re, 0, cx, cy, scale));
         pImag.push(project3D(x, 0, im, cx, cy, scale));
         if (state.showReIm) { pRealWall.push(project3D(x, re, -1, cx, cy, scale)); pImagWall.push(project3D(x, -1, im, cx, cy, scale)); }
+    }
+    
+    // Draw Surface (Revolution of Magnitude)
+    // Draw Surface (Revolution of Magnitude)
+    if (state.showSurface) {
+         // MORE OPAQUE
+         ctx.fillStyle = 'rgba(135, 206, 250, 0.4)'; 
+         ctx.strokeStyle = 'rgba(135, 206, 250, 0.1)';
+         
+         // Increase resolution significantly if smoothed
+         const density = state.fftSmoothing ? 200 : 70;
+         const step = Math.max(1, Math.floor(maxK / density)); 
+         const segments = 24; 
+         
+         let prevRing = null;
+         
+         // Iterate to form rings and connect them
+         for (let k = 0; k <= maxK; k += step) {
+             const idx = Math.min(k, fft.length - 1);
+             const fVal = (idx * dF); 
+             const x = fVal / maxFreq; 
+             const scaleFactor = (N_Base / 2); 
+             const re = fft[idx].re / scaleFactor; 
+             const im = fft[idx].im / scaleFactor;
+             const mag = Math.hypot(re, im);
+             
+             // Calculate Ring Points
+             const currRing = [];
+             for(let j=0; j<=segments; j++) {
+                 const theta = (j/segments) * Math.PI * 2;
+                 const dy = mag * Math.cos(theta);
+                 const dz = mag * Math.sin(theta);
+                 currRing.push(project3D(x, dy, dz, cx, cy, scale));
+             }
+             
+             // Connect to previous ring
+             if (prevRing) {
+                  for(let j=0; j<segments; j++) {
+                      ctx.beginPath();
+                      ctx.moveTo(prevRing[j].x, prevRing[j].y);
+                      ctx.lineTo(prevRing[j+1].x, prevRing[j+1].y);
+                      ctx.lineTo(currRing[j+1].x, currRing[j+1].y);
+                      ctx.lineTo(currRing[j].x, currRing[j].y);
+                      ctx.closePath();
+                      ctx.fill();
+                      ctx.stroke(); 
+                  }
+             }
+             prevRing = currRing;
+             
+             // Break effectively if we hit end
+             if (k >= maxK || idx >= fft.length - 1) break;
+         }
     }
     
     ctx.lineWidth = 1;

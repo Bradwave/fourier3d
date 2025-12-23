@@ -60,12 +60,8 @@ body {
 }
 
 /* Focus Mode Adjustments */
-body.focus-mode .app-container {
-    grid-template-columns: 1fr;
-}
-body.focus-mode .sidebar {
-    display: none;
-}
+/* Focus Mode Adjustments */
+/* Sidebar Hiding Removed */
 body.focus-mode #signal-plot-container {
     display: none;
 }
@@ -90,10 +86,11 @@ body.focus-mode #transform-3d-container {
         overflow: hidden;
     }
     
-    /* In focus mode on mobile, hide sidebar bottom row */
-    body.focus-mode .app-container {
+    
+    /* In focus mode on mobile, hide sidebar bottom row - REMOVED */
+    /* body.focus-mode .app-container {
          grid-template-rows: 1fr;
-    }
+    } */
 
     .plots-wrapper {
         order: 1; /* Top */

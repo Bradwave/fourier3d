@@ -70,15 +70,8 @@
 
             <div id="visualization-wrapper" class="collapsible-content expanded">
                 <div class="collapsible-inner">
-                    <div class="control-group" style="flex-direction: row; justify-content: space-between; align-items: center;">
-                        <div class="control-label">Show Grid & Axis</div>
-                        <label class="toggle-switch">
-                            <input type="checkbox" id="axis-toggle" checked>
-                            <span class="slider"></span>
-                        </label>
-                    </div>
-
-                    <div class="control-group" style="margin-top: 12px; margin-bottom: 12px;">
+                    <!-- Ranges -->
+                    <div class="control-group" style="margin-top: 4px; margin-bottom: 12px;">
                         <div class="control-label" id="display-segment-label">Display Segment (0.00s - 5.00s)</div>
                         <div class="double-slider-wrapper" id="display-segment-slider">
                             <div class="double-slider-track"></div>
@@ -97,8 +90,38 @@
                             <input type="range" class="double-slider-input" id="freq-end-input" min="0" max="100" step="0.5" value="100" oninput="updateFreqSegment('end', this.value)">
                         </div>
                     </div>
+
+                    <!-- Display Toggles -->
+                    <div class="control-group" style="flex-direction: row; justify-content: space-between; align-items: center; margin-top: 8px;">
+                        <div class="control-label">Show Grid & Axis</div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="axis-toggle" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+
+                    <div style="margin: 12px 0 8px 0; border-top: 1px dashed var(--color-border); padding-top: 8px;">
+                        <div class="control-label" style="font-size: 0.70rem; color: #aaa; text-transform: uppercase; letter-spacing: 1px;">Fourier Visualization</div>
+                    </div>
+
+                    <div class="control-group" style="flex-direction: row; justify-content: space-between; align-items: center; margin-top: 8px;">
+                        <div class="control-label">Show Real/Imag Traces</div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="reim-toggle">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+
+                    <div class="control-group" style="flex-direction: row; justify-content: space-between; align-items: center; margin-top: 8px;">
+                        <div class="control-label">Show 3D Surface</div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="surface-toggle">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
                     
-                    <div class="control-group">
+                    <!-- Advanced -->
+                    <div class="control-group" style="margin-top: 12px;">
                         <div class="control-label">Transform Sampling (Resolution)</div>
                         <input type="range" id="fft-sampling-slider" min="1" max="4" value="1" step="0.5">
                     </div>
@@ -107,14 +130,6 @@
                         <div class="control-label">Transform Smoothing</div>
                         <label class="toggle-switch">
                             <input type="checkbox" id="fft-smoothing-toggle">
-                            <span class="slider"></span>
-                        </label>
-                    </div>
-
-                    <div class="control-group" style="flex-direction: row; justify-content: space-between; align-items: center; margin-top: 8px;">
-                        <div class="control-label">Show Real/Imag Traces</div>
-                        <label class="toggle-switch">
-                            <input type="checkbox" id="reim-toggle">
                             <span class="slider"></span>
                         </label>
                     </div>
@@ -134,7 +149,7 @@
         <main class="plots-wrapper">
             <!-- Top: Original Signal -->
             <div class="plot-container" id="signal-plot-container" style="flex: 1;">
-                <div class="plot-label">ORIGINAL SIGNAL (TIME DOMAIN) [s]</div>
+                <div class="plot-label">SIGNAL (TIME DOMAIN)</div>
                 <!-- Old info overlay removed -->
                 <div class="plot-controls">
                     <div class="time-label-control" id="time-info">Time: 0.50s</div>
@@ -164,7 +179,7 @@
                 
                 <!-- Middle Right: R-I Projection -->
                 <div class="plot-container" id="ri-plot-container" style="flex: 1;">
-                    <div class="plot-label">R-I TRANSFORM PROJECTION & WINDING CENTER</div>
+                    <div class="plot-label">SIGNAL WINDING & FT PROJECTION</div>
                     <button class="reset-view-btn" onclick="resetView('ri')" title="Reset R-I View">
                          <span class="material-symbols-outlined" style="font-size: 16px;">center_focus_strong</span>
                     </button>
@@ -175,7 +190,7 @@
 
             <!-- Bottom: Absolute Value Transform -->
             <div class="plot-container" id="mag-plot-container" style="flex: 1;">
-                <div class="plot-label">FOURIER TRANSFORM MAGNITUDE (|F(w)|)</div>
+                <div class="plot-label">FT MAGNITUDE |F(w)| (FREQUENCY DOMAIN)</div>
                  <div class="plot-info-overlay" id="freq-info">Freq: 0.0 Hz</div>
                 <canvas id="abs-transform-canvas"></canvas>
             </div>
