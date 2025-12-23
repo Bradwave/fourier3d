@@ -98,6 +98,7 @@ const STORAGE_KEY = 'ftwinding_state_v7';
 
 function init() {
     loadState();
+    syncGlobalControls();
     renderComponentsUI();
     setupListeners();
     state.view3d.hasInteracted = false;
@@ -107,6 +108,40 @@ function init() {
     updateSignalSliderUI();
     updateFreqSliderUI();
     animate();
+}
+
+function syncGlobalControls() {
+    if (elements.axisToggle) elements.axisToggle.checked = state.showAxis;
+    if (elements.reimToggle) elements.reimToggle.checked = state.showReIm;
+    if (elements.surfaceToggle) elements.surfaceToggle.checked = state.showSurface;
+    if (elements.audioMultSlider) {
+        elements.audioMultSlider.value = state.audioMultiplier;
+        elements.audioMultDisplay.innerText = state.audioMultiplier;
+    }
+    if (elements.fftSamplingSlider) elements.fftSamplingSlider.value = state.fftSampling;
+    if (elements.fftSmoothingToggle) elements.fftSmoothingToggle.checked = state.fftSmoothing;
+
+    if (state.isFocusMode) {
+        document.body.classList.add('focus-mode');
+        const icon = document.getElementById('focus-icon');
+        if(icon) icon.innerText = 'close_fullscreen';
+    } else {
+        document.body.classList.remove('focus-mode');
+        const icon = document.getElementById('focus-icon');
+        if(icon) icon.innerText = 'fullscreen';
+    }
+
+    if (state.isSidebarCollapsed) {
+        document.body.classList.add('sidebar-collapsed');
+    } else {
+        document.body.classList.remove('sidebar-collapsed');
+    }
+    
+    const sbBtn = document.getElementById('toggle-sidebar-btn');
+    if(sbBtn) {
+         if (document.body.classList.contains('sidebar-collapsed')) sbBtn.innerHTML = '<span class="material-symbols-outlined">chevron_right</span>';
+         else sbBtn.innerHTML = '<span class="material-symbols-outlined">chevron_left</span>';
+    }
 }
 
 window.toggleSidebar = () => {
@@ -168,38 +203,15 @@ function loadState() {
             if (parsed.showAxis !== undefined) state.showAxis = parsed.showAxis;
             if (parsed.showReIm !== undefined) state.showReIm = parsed.showReIm;
             if (parsed.showSurface !== undefined) state.showSurface = parsed.showSurface;
-            state.fftSampling = parsed.fftSampling || 1;
-            state.fftSmoothing = !!parsed.fftSmoothing;
+            
+            state.fftSampling = parsed.fftSampling !== undefined ? parsed.fftSampling : 2;
+            state.fftSmoothing = parsed.fftSmoothing !== undefined ? parsed.fftSmoothing : true;
+            
             if (parsed.view3d) state.view3d = parsed.view3d;
             if (parsed.viewRI) state.viewRI = parsed.viewRI;
             if (parsed.viewAbs) state.viewAbs = parsed.viewAbs;
             if (parsed.isSidebarCollapsed !== undefined) state.isSidebarCollapsed = parsed.isSidebarCollapsed;
-
-            elements.axisToggle.checked = state.showAxis;
-            if (elements.reimToggle) elements.reimToggle.checked = state.showReIm;
-            if (elements.surfaceToggle) elements.surfaceToggle.checked = state.showSurface;
-            elements.audioMultSlider.value = state.audioMultiplier;
-            elements.audioMultDisplay.innerText = state.audioMultiplier;
-            if (elements.fftSamplingSlider) elements.fftSamplingSlider.value = state.fftSampling;
-            if (elements.fftSamplingSlider) elements.fftSamplingSlider.value = state.fftSampling;
-            if (elements.fftSmoothingToggle) elements.fftSmoothingToggle.checked = state.fftSmoothing;
-            
-            if (state.isFocusMode) {
-                document.body.classList.add('focus-mode');
-                const icon = document.getElementById('focus-icon');
-                if(icon) icon.innerText = 'close_fullscreen';
-            }
-
-            if (state.isSidebarCollapsed) {
-                document.body.classList.add('sidebar-collapsed');
-            }
-            
-            // Init sidebar button icon
-            const sbBtn = document.getElementById('toggle-sidebar-btn');
-            if(sbBtn) {
-                 if (document.body.classList.contains('sidebar-collapsed')) sbBtn.innerHTML = '<span class="material-symbols-outlined">chevron_right</span>';
-                 else sbBtn.innerHTML = '<span class="material-symbols-outlined">chevron_left</span>';
-            }
+            if (parsed.isFocusMode !== undefined) state.isFocusMode = parsed.isFocusMode;
 
         } catch (e) { console.error(e); }
     }
