@@ -35,7 +35,7 @@ const state = {
     viewAbs: { startFreq: 0, endFreq: 0, isPanning: false },
     selectedFrequency: 2.0,
     isDraggingFreq: false,
-    view3d: { rotX: -0.5, rotY: 0.5, scale: 1.0, isRotating: false, panX: 0, panY: 0, isPanning: false, hasInteracted: false },
+    view3d: { rotX: -0.5, rotY: 0.5, rotZ: 0, scale: 1.0, isRotating: false, panX: 0, panY: 0, isPanning: false, hasInteracted: false },
     viewRI: { panX: 0, panY: 0, scale: 1.0, isPanning: false, hasInteracted: false },
     lastMouse: { x: 0, y: 0 },
     isFocusMode: false,
@@ -674,8 +674,12 @@ function setupListeners() {
                     viewObj.panX += dx;
                     viewObj.panY += dy;
                 } else if (viewObj.isRotating) {
-                    viewObj.rotY += dx * 0.01;
-                    viewObj.rotX += dy * 0.01;
+                    if (e.shiftKey && name === 'view3d') {
+                        viewObj.rotZ += dx * 0.01;
+                    } else {
+                        viewObj.rotY += dx * 0.01;
+                        viewObj.rotX += dy * 0.01;
+                    }
                 }
                 saveState();
             }
@@ -1255,20 +1259,44 @@ function project3D(x, y, z, cx, cy, scale) {
     cx += state.view3d.panX;
     cy += state.view3d.panY;
 
-    const cosX = Math.cos(state.view3d.rotX);
-    const sinX = Math.sin(state.view3d.rotX);
-    const cosY = Math.cos(state.view3d.rotY);
-    const sinY = Math.sin(state.view3d.rotY);
+    // Apply rotations in order: Z, then X, then Y
+    const rotX = state.view3d.rotX;
+    const rotY = state.view3d.rotY;
+    const rotZ = state.view3d.rotZ || 0;
 
-    let y1 = y * cosX - z * sinX;
-    let z1 = y * sinX + z * cosX;
-    let x2 = x * cosY + z1 * sinY;
-    let z2 = -x * sinY + z1 * cosY;
+    const cosX = Math.cos(rotX);
+    const sinX = Math.sin(rotX);
+    const cosY = Math.cos(rotY);
+    const sinY = Math.sin(rotY);
+    const cosZ = Math.cos(rotZ);
+    const sinZ = Math.sin(rotZ);
+
+    // 1. Rotate around Z
+    // x' = x*cosZ - y*sinZ
+    // y' = x*sinZ + y*cosZ
+    // z' = z
+    let x1 = x * cosZ - y * sinZ;
+    let y1 = x * sinZ + y * cosZ;
+    let z1 = z;
+
+    // 2. Rotate around X
+    // x'' = x'
+    // y'' = y'*cosX - z'*sinX
+    // z'' = y'*sinX + z'*cosX
+    let y2 = y1 * cosX - z1 * sinX;
+    let z2 = y1 * sinX + z1 * cosX;
+
+    // 3. Rotate around Y
+    // x''' = x'*cosY + z''*sinY
+    // y''' = y''
+    // z''' = -x'*sinY + z''*cosY
+    let x3 = x1 * cosY + z2 * sinY;
+    let z3 = -x1 * sinY + z2 * cosY;
 
     const s = scale * state.view3d.scale;
     return {
-        x: cx + x2 * s,
-        y: cy - y1 * s
+        x: cx + x3 * s,
+        y: cy - y2 * s
     };
 }
 
