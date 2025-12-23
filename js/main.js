@@ -319,29 +319,81 @@ function setupListeners() {
             } 
         });
     });
-    elements.addComponentBtn.addEventListener('click', () => { state.components.push(new SignalComponent(1, 1.0)); renderComponentsUI(); saveState(); });
-    elements.resetBtn.addEventListener('click', () => { localStorage.removeItem(STORAGE_KEY); location.reload(); });
-    elements.axisToggle.addEventListener('change', (e) => { state.showAxis = e.target.checked; saveState(); });
-    if (elements.reimToggle) elements.reimToggle.addEventListener('change', (e) => { state.showReIm = e.target.checked; saveState(); });
-    if (elements.surfaceToggle) elements.surfaceToggle.addEventListener('change', (e) => { state.showSurface = e.target.checked; saveState(); });
-    elements.audioMultSlider.addEventListener('input', (e) => { state.audioMultiplier = parseInt(e.target.value); elements.audioMultDisplay.innerText = state.audioMultiplier; saveState(); });
-    if (elements.fftSamplingSlider) elements.fftSamplingSlider.addEventListener('input', (e) => { state.fftSampling = parseFloat(e.target.value); saveState(); });
-    if (elements.fftSmoothingToggle) elements.fftSmoothingToggle.addEventListener('change', (e) => { state.fftSmoothing = e.target.checked; saveState(); });
+    elements.addComponentBtn.addEventListener('click', () => {
+        state.components.push(new SignalComponent(1, 1.0));
+        renderComponentsUI();
+        saveState();
+    });
 
+    elements.resetBtn.addEventListener('click', () => {
+        localStorage.removeItem(STORAGE_KEY);
+        location.reload();
+    });
+
+    elements.axisToggle.addEventListener('change', (e) => {
+        state.showAxis = e.target.checked;
+        saveState();
+    });
+
+    if (elements.reimToggle) {
+        elements.reimToggle.addEventListener('change', (e) => {
+            state.showReIm = e.target.checked;
+            saveState();
+        });
+    }
+
+    if (elements.surfaceToggle) {
+        elements.surfaceToggle.addEventListener('change', (e) => {
+            state.showSurface = e.target.checked;
+            saveState();
+        });
+    }
+
+    elements.audioMultSlider.addEventListener('input', (e) => {
+        state.audioMultiplier = parseInt(e.target.value);
+        elements.audioMultDisplay.innerText = state.audioMultiplier;
+        saveState();
+    });
+
+    if (elements.fftSamplingSlider) {
+        elements.fftSamplingSlider.addEventListener('input', (e) => {
+            state.fftSampling = parseFloat(e.target.value);
+            saveState();
+        });
+    }
+
+    if (elements.fftSmoothingToggle) {
+        elements.fftSmoothingToggle.addEventListener('change', (e) => {
+            state.fftSmoothing = e.target.checked;
+            saveState();
+        });
+    }
+
+    // Abs Plot 
     // Abs Plot 
     const absCanvas = elements.canvases.abs;
     const handleFreqDrag = (e) => {
-        const rect = absCanvas.getBoundingClientRect(); const x = e.clientX - rect.left; const w = rect.width;
-        let maxCompFreq = 0; state.components.forEach(c => { if (c.freq > maxCompFreq) maxCompFreq = c.freq; });
+        const rect = absCanvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const w = rect.width;
+        
+        let maxCompFreq = 0;
+        state.components.forEach(c => {
+            if (c.freq > maxCompFreq) maxCompFreq = c.freq;
+        });
         const strictMax = Math.max(20, Math.ceil(maxCompFreq * 1.5));
         
         const maxDisplayFreq = state.viewAbs.endFreq > 0 ? state.viewAbs.endFreq : strictMax;
         const startF = state.viewAbs.startFreq;
         
         if (state.viewAbs.isPanning) {
-            const dx = e.clientX - state.lastMouse.x; const fRange = maxDisplayFreq - startF; const fShift = -(dx / w) * fRange;
+            const dx = e.clientX - state.lastMouse.x;
+            const fRange = maxDisplayFreq - startF;
+            const fShift = -(dx / w) * fRange;
             
-            if (state.viewAbs.endFreq === 0) { state.viewAbs.endFreq = strictMax; }
+            if (state.viewAbs.endFreq === 0) {
+                state.viewAbs.endFreq = strictMax;
+            }
             
             let newStart = state.viewAbs.startFreq + fShift;
             let newEnd = state.viewAbs.endFreq + fShift;
@@ -349,11 +401,13 @@ function setupListeners() {
             // Pan Clamping
             if (newStart < 0) {
                  const diff = 0 - newStart;
-                 newStart += diff; newEnd += diff;
+                 newStart += diff;
+                 newEnd += diff;
             }
             if (newEnd > strictMax) {
                 const diff = newEnd - strictMax;
-                newStart -= diff; newEnd -= diff;
+                newStart -= diff;
+                newEnd -= diff;
                 if(newStart < 0) newStart = 0; // if range > strictMax
             }
 
@@ -361,16 +415,28 @@ function setupListeners() {
             state.viewAbs.endFreq = newEnd;
             state.lastMouse = { x: e.clientX, y: e.clientY };
             updateFreqSliderUI();
-            saveState(); return;
+            saveState();
+            return;
         }
-        let f = startF + (x / w) * (maxDisplayFreq - startF); f = Math.max(0, Math.min(f, maxDisplayFreq));
-        state.selectedFrequency = f; elements.plotInfo.innerText = `Freq: ${f.toFixed(2)} Hz`; saveState();
+        
+        let f = startF + (x / w) * (maxDisplayFreq - startF);
+        f = Math.max(0, Math.min(f, maxDisplayFreq));
+        state.selectedFrequency = f;
+        elements.plotInfo.innerText = `Freq: ${f.toFixed(2)} Hz`;
+        saveState();
     };
+
     absCanvas.addEventListener('pointerdown', (e) => {
         absCanvas.setPointerCapture(e.pointerId);
-        if (e.ctrlKey) { state.viewAbs.isPanning = true; state.lastMouse = { x: e.clientX, y: e.clientY }; }
-        else { state.isDraggingFreq = true; handleFreqDrag(e); }
+        if (e.ctrlKey) {
+            state.viewAbs.isPanning = true;
+            state.lastMouse = { x: e.clientX, y: e.clientY };
+        } else {
+            state.isDraggingFreq = true;
+            handleFreqDrag(e);
+        }
     });
+
     absCanvas.addEventListener('pointermove', (e) => {
         // Cursor Update
         if (e.ctrlKey) absCanvas.style.cursor = 'grab';
@@ -379,7 +445,14 @@ function setupListeners() {
 
         if (state.isDraggingFreq || state.viewAbs.isPanning) handleFreqDrag(e);
     });
-    absCanvas.addEventListener('pointerup', (e) => { state.isDraggingFreq = false; state.viewAbs.isPanning = false; absCanvas.releasePointerCapture(e.pointerId); absCanvas.style.cursor = 'col-resize'; saveState(); });
+
+    absCanvas.addEventListener('pointerup', (e) => {
+        state.isDraggingFreq = false;
+        state.viewAbs.isPanning = false;
+        absCanvas.releasePointerCapture(e.pointerId);
+        absCanvas.style.cursor = 'col-resize';
+        saveState();
+    });
     absCanvas.addEventListener('wheel', (e) => { 
         if (!e.ctrlKey) return; e.preventDefault(); 
         
@@ -422,30 +495,72 @@ function setupListeners() {
     });
 
     // Signal Plot
+    // Signal Plot
     const sigCanvas = elements.canvases.signal;
     const handleSignalInteract = (e) => {
-        const rect = sigCanvas.getBoundingClientRect(); const x = e.clientX - rect.left; const w = rect.width;
+        const rect = sigCanvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const w = rect.width;
+        
         if (state.isPanningSignal) { 
-            const dx = e.clientX - state.lastMouse.x; const timeRange = state.zoomEnd - state.zoomStart; const tShift = -(dx / w) * timeRange; 
-            state.zoomStart = Math.max(0, state.zoomStart + tShift); state.zoomEnd = Math.min(50, state.zoomStart + timeRange); 
-            if (state.zoomStart < 0) state.zoomStart = 0; if (state.zoomEnd > 5.0) state.zoomEnd = 5.0; if (state.zoomStart > state.zoomEnd - 0.1) state.zoomStart = state.zoomEnd - 0.1; 
+            const dx = e.clientX - state.lastMouse.x;
+            const timeRange = state.zoomEnd - state.zoomStart;
+            const tShift = -(dx / w) * timeRange;
+            
+            state.zoomStart = Math.max(0, state.zoomStart + tShift);
+            state.zoomEnd = Math.min(50, state.zoomStart + timeRange);
+            
+            if (state.zoomStart < 0) state.zoomStart = 0;
+            if (state.zoomEnd > 5.0) state.zoomEnd = 5.0;
+            if (state.zoomStart > state.zoomEnd - 0.1) state.zoomStart = state.zoomEnd - 0.1;
+            
             updateSignalSliderUI();
-            state.lastMouse = { x: e.clientX, y: e.clientY }; saveState(); return; 
+            state.lastMouse = { x: e.clientX, y: e.clientY };
+            saveState();
+            return; 
         }
-        if (state.isDraggingTime) { let t = state.zoomStart + (x / w) * (state.zoomEnd - state.zoomStart); t = Math.max(state.zoomStart, Math.min(t, state.zoomEnd)); state.selectedTime = t; if (elements.timeInfo) elements.timeInfo.innerText = `Time: ${t.toFixed(2)}s`; saveState(); }
+        
+        if (state.isDraggingTime) {
+            let t = state.zoomStart + (x / w) * (state.zoomEnd - state.zoomStart);
+            t = Math.max(state.zoomStart, Math.min(t, state.zoomEnd));
+            state.selectedTime = t;
+            if (elements.timeInfo) elements.timeInfo.innerText = `Time: ${t.toFixed(2)}s`;
+            saveState();
+        }
     };
-    sigCanvas.addEventListener('pointerdown', (e) => { sigCanvas.setPointerCapture(e.pointerId); if (e.ctrlKey) { state.isPanningSignal = true; state.lastMouse = { x: e.clientX, y: e.clientY }; } else { state.isDraggingTime = true; handleSignalInteract(e); } });
+
+    sigCanvas.addEventListener('pointerdown', (e) => {
+        sigCanvas.setPointerCapture(e.pointerId);
+        if (e.ctrlKey) {
+            state.isPanningSignal = true;
+            state.lastMouse = { x: e.clientX, y: e.clientY };
+        } else {
+            state.isDraggingTime = true;
+            handleSignalInteract(e);
+        }
+    });
+
     sigCanvas.addEventListener('pointermove', (e) => {
         if (state.isDraggingTime || state.isPanningSignal) handleSignalInteract(e);
         // Cursor Class Toggle
         if (e.ctrlKey) { sigCanvas.style.cursor = 'grab'; }
         else { sigCanvas.style.cursor = 'col-resize'; } 
     });
-    sigCanvas.addEventListener('pointerup', (e) => { state.isDraggingTime = false; state.isPanningSignal = false; sigCanvas.releasePointerCapture(e.pointerId); sigCanvas.style.cursor = 'col-resize'; saveState(); });
+
+    sigCanvas.addEventListener('pointerup', (e) => {
+        state.isDraggingTime = false;
+        state.isPanningSignal = false;
+        sigCanvas.releasePointerCapture(e.pointerId);
+        sigCanvas.style.cursor = 'col-resize';
+        saveState();
+    });
+
     sigCanvas.addEventListener('wheel', (e) => { 
         if (e.ctrlKey) { 
             e.preventDefault(); 
-            const rect = sigCanvas.getBoundingClientRect(); const x = e.clientX - rect.left; const w = rect.width; 
+            const rect = sigCanvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const w = rect.width; 
             const tFocus = state.zoomStart + (x/w) * (state.zoomEnd - state.zoomStart); 
             const zoomFactor = e.deltaY > 0 ? 1.1 : 0.9; 
             const newRange = (state.zoomEnd - state.zoomStart) * zoomFactor; 
@@ -478,26 +593,26 @@ function setupListeners() {
             triggerHintFade(name);
             evCache.push(e);
             canvas.setPointerCapture(e.pointerId);
-            
+
             if (evCache.length === 1) {
                 viewObj.isPanning = e.ctrlKey || (name === 'viewRI'); // RI is always pan? Or just pan by default
                 // view3d Rotate default, Pan ctrl.
                 if (name === 'view3d' && !e.ctrlKey) viewObj.isRotating = true;
-                
+
                 state.lastMouse = { x: e.clientX, y: e.clientY };
             }
         });
-        
+
         canvas.addEventListener('pointermove', (e) => {
-             // Find this event in the cache and update its record
+            // Find this event in the cache and update its record
             const index = evCache.findIndex((cachedEv) => cachedEv.pointerId === e.pointerId);
             if (index > -1) evCache[index] = e;
-            
+
             // Multi-touch Pinch
             if (evCache.length === 2) {
                 // Calculate distance
                 const curDiff = Math.hypot(evCache[0].clientX - evCache[1].clientX, evCache[0].clientY - evCache[1].clientY);
-                
+
                 // Calculate Midpoint
                 const curMidX = (evCache[0].clientX + evCache[1].clientX) / 2;
                 const curMidY = (evCache[0].clientY + evCache[1].clientY) / 2;
@@ -509,86 +624,75 @@ function setupListeners() {
                         const zoomSpeed = 0.01;
                         viewObj.scale *= (1 + delta * zoomSpeed);
                     }
-                    
+
                     // Pan (using midpoint delta)
-                    // We need previous midpoint. Store it in cache or state?
-                    // Simplified: We don't have prevMid easily unless we track it.
-                    // Let's rely on individual pointer moves for panning if needed? 
-                    // No, 2-finger pan is intuitive.
-                    // Let's stick to Zoom for pinch for now to be safe, unless user strictly needs 2-finger pan.
-                    // "pinch zoom ... and drag pan". 1-finger drag pan covers "drag pan".
-                    // For 3D, 1-finger is rotate. So 3D needs a way to pan on mobile?
-                    // Maybe 2-finger pan for 3D? 
-                    // Let's implement basic midpoint tracking if safe.
-                    
-                    // Actually, "drag pan" logic for 3D is usually Ctrl+Drag. On mobile, no Ctrl.
-                    // So 2-finger pan is ESSENTIAL for 3D panning on mobile.
-                    
                     if (viewObj.lastMid) {
                         const dx = curMidX - viewObj.lastMid.x;
                         const dy = curMidY - viewObj.lastMid.y;
-                         if (name === 'view3d') {
-                             viewObj.panX += dx;
-                             viewObj.panY += dy;
-                         } else {
-                             // RI is already 1-finger pan. 2-finger pan adds to it? Sure.
-                             viewObj.panX += dx;
-                             viewObj.panY += dy;
-                         }
+                        if (name === 'view3d') {
+                            viewObj.panX += dx;
+                            viewObj.panY += dy;
+                        } else {
+                            viewObj.panX += dx;
+                            viewObj.panY += dy;
+                        }
                     }
                 }
                 prevDiff = curDiff;
-                viewObj.lastMid = { x: curMidX, y: curMidY };
+                viewObj.lastMid = {
+                    x: curMidX,
+                    y: curMidY
+                };
                 return; // Skip single finger logic
             } else {
-                if(viewObj.lastMid) viewObj.lastMid = null; // Reset
+                if (viewObj.lastMid) viewObj.lastMid = null; // Reset
             }
             
             if (evCache.length === 1) {
-                 const dx = e.clientX - state.lastMouse.x;
-                 const dy = e.clientY - state.lastMouse.y;
-                 state.lastMouse = { x: e.clientX, y: e.clientY };
-                 
-                 if (viewObj.isPanning) {
-                     viewObj.panX += dx;
-                     viewObj.panY += dy;
-                 } else if (viewObj.isRotating) {
-                     viewObj.rotY += dx * 0.01;
-                     viewObj.rotX += dy * 0.01;
-                 }
-                 saveState();
+                const dx = e.clientX - state.lastMouse.x;
+                const dy = e.clientY - state.lastMouse.y;
+                state.lastMouse = { x: e.clientX, y: e.clientY };
+
+                if (viewObj.isPanning) {
+                    viewObj.panX += dx;
+                    viewObj.panY += dy;
+                } else if (viewObj.isRotating) {
+                    viewObj.rotY += dx * 0.01;
+                    viewObj.rotX += dy * 0.01;
+                }
+                saveState();
             }
         });
-        
+
         canvas.addEventListener('pointerup', (e) => {
             removeEvent(e);
             if (evCache.length < 2) {
-                 prevDiff = -1;
-                 viewObj.lastMid = null;
+                prevDiff = -1;
+                viewObj.lastMid = null;
             }
             if (evCache.length === 0) {
                 viewObj.isRotating = false;
                 viewObj.isPanning = false;
             }
         });
-        
+
         canvas.addEventListener('pointercancel', (e) => {
-             removeEvent(e);
-             if (evCache.length < 2) {
-                 prevDiff = -1;
-                 viewObj.lastMid = null;
-             }
-             if (evCache.length === 0) {
+            removeEvent(e);
+            if (evCache.length < 2) {
+                prevDiff = -1;
+                viewObj.lastMid = null;
+            }
+            if (evCache.length === 0) {
                 viewObj.isRotating = false;
                 viewObj.isPanning = false;
-             }
+            }
         });
-        
+
         canvas.addEventListener('wheel', (e) => {
-             e.preventDefault();
-             triggerHintFade(name); 
-             viewObj.scale *= (e.deltaY > 0 ? 0.9 : 1.1); 
-             saveState(); 
+            e.preventDefault();
+            triggerHintFade(name);
+            viewObj.scale *= (e.deltaY > 0 ? 0.9 : 1.1);
+            saveState();
         }, { passive: false });
 
         function removeEvent(e) {
@@ -602,24 +706,266 @@ function setupListeners() {
 }
 
 // ... Component Logic ... 
-window.removeComponent = (index) => { state.components.splice(index, 1); renderComponentsUI(); saveState(); };
-window.updateComponent = (id, prop, value) => { const c = state.components.find(x => x.id === id); if (c) { c[prop] = parseFloat(value); document.getElementById((prop === 'freq' ? 'f-val-' : 'a-val-') + id).innerText = value + (prop === 'freq' ? ' Hz' : ''); drawComponentPreview(document.getElementById(`preview-${c.id}`), c); saveState(); } };
-window.setEnvelopeType = (id, type) => { const c = state.components.find(x => x.id === id); if (c) { c.envelopeType = type; renderComponentsUI(); saveState(); } };
-window.updateEnvParam = (id, type, param, value) => { const c = state.components.find(x => x.id === id); if (c) { c.envelopeParams[type][param] = parseFloat(value); saveState(); drawEnvelopePreview(document.getElementById(`env-prev-${id}`), c); } };
-window.updateTimeConstraint = (id, type, value) => { const c = state.components.find(x => x.id === id); if (!c) return; updateTimeConstraintLogic(c, type, parseFloat(value)); };
-function updateTimeConstraintLogic(comp, type, value) { if (type === 'start') { if (value >= comp.endTime) { comp.endTime = Math.min(value + 0.1, 5.0); if (comp.endTime === 5.0 && value > 4.9) value = 4.9; } comp.startTime = value; } else { if (value <= comp.startTime) { comp.startTime = Math.max(value - 0.1, 0); if (comp.startTime === 0 && value < 0.1) value = 0.1; } comp.endTime = value; } const pv = document.getElementById(`preview-${comp.id}`); if (pv && pv.closest('.component-body')) { const wrap = pv.closest('.component-body'); const tf = wrap.querySelector('.double-slider-fill'); const ips = wrap.querySelectorAll('.double-slider-input'); const MAX = 5.0; if (tf) { tf.style.left = (comp.startTime / MAX) * 100 + '%'; tf.style.width = ((comp.endTime - comp.startTime) / MAX) * 100 + '%'; } if (ips.length === 2) { if (type === 'start') ips[1].value = comp.endTime; else ips[0].value = comp.startTime; } const lb = document.getElementById(`time-label-${comp.id}`); if (lb) lb.innerHTML = `TIME CONSTRAINT (${comp.startTime.toFixed(2)}s - ${comp.endTime.toFixed(2)}s)`; } saveState(); }
-function renderComponentsUI() { elements.componentsContainer.innerHTML = ''; state.components.forEach((comp, index) => { const el = document.createElement('div'); el.className = 'component-row'; el.innerHTML = `<div class="component-header"><span>WAVE ${index + 1}</span><span class="material-symbols-outlined remove-btn" style="font-size: 16px;" onclick="removeComponent(${index})">close</span></div><div class="component-body"><div class="component-controls"><div class="component-control-item"><div class="component-slider-wrapper"><span class="component-label">FREQ</span><input type="range" class="compact-range" value="${comp.freq}" min="0.5" max="50" step="0.5" oninput="updateComponent('${comp.id}', 'freq', this.value)"></div><div id="f-val-${comp.id}" class="component-value">${comp.freq} Hz</div></div><div class="component-control-item"><div class="component-slider-wrapper"><span class="component-label">AMP</span><input type="range" class="compact-range" value="${comp.amp}" min="0" max="2" step="0.1" oninput="updateComponent('${comp.id}', 'amp', this.value)"></div><div id="a-val-${comp.id}" class="component-value">${comp.amp}</div></div></div><div class="component-preview-wrapper"><canvas id="preview-${comp.id}" width="100" height="28"></canvas></div><div style="margin-top: 8px;"><div class="component-label" id="time-label-${comp.id}">TIME (${comp.startTime.toFixed(2)}s - ${comp.endTime.toFixed(2)}s)</div><div class="double-slider-wrapper"><div class="double-slider-track"></div><div class="double-slider-fill" style="left: ${(comp.startTime / 5.0) * 100}%; width: ${((comp.endTime - comp.startTime) / 5.0) * 100}%"></div><input type="range" class="double-slider-input" min="0" max="5" step="0.1" value="${comp.startTime}" oninput="updateTimeConstraint('${comp.id}', 'start', this.value)"><input type="range" class="double-slider-input" min="0" max="5" step="0.1" value="${comp.endTime}" oninput="updateTimeConstraint('${comp.id}', 'end', this.value)"></div></div><div class="envelope-section"><div class="envelope-header"><span class="component-label">ENVELOPE</span><div class="segmented-control" style="margin: 0; width: 120px; transform: scale(0.9);"><div class="segmented-option ${comp.envelopeType === 'gaussian' ? 'active' : ''}" onclick="setEnvelopeType('${comp.id}', 'gaussian')">GAUSS</div><div class="segmented-option ${comp.envelopeType === 'adsr' ? 'active' : ''}" onclick="setEnvelopeType('${comp.id}', 'adsr')">ADSR</div></div></div><canvas class="envelope-preview" id="env-prev-${comp.id}" width="200" height="80"></canvas><div class="envelope-params">${getEnvelopeControls(comp)}</div></div></div>`; elements.componentsContainer.appendChild(el); drawComponentPreview(document.getElementById(`preview-${comp.id}`), comp); drawEnvelopePreview(document.getElementById(`env-prev-${comp.id}`), comp); }); }
-function getEnvelopeControls(comp) { if (comp.envelopeType === 'gaussian') { const p = comp.envelopeParams.gaussian; return `<div class="param-col span-2"><input type="range" min="0" max="1" step="0.01" value="${p.center}" oninput="updateEnvParam('${comp.id}', 'gaussian', 'center', this.value)"><span class="param-label">CENTER</span></div><div class="param-col span-2"><input type="range" min="0.05" max="0.5" step="0.01" value="${p.width}" oninput="updateEnvParam('${comp.id}', 'gaussian', 'width', this.value)"><span class="param-label">WIDTH</span></div>`; } else { const p = comp.envelopeParams.adsr; return `<div class="param-col"><input type="range" min="0" max="1" step="0.01" value="${p.a}" oninput="updateEnvParam('${comp.id}', 'adsr', 'a', this.value)"><span class="param-label">A</span></div><div class="param-col"><input type="range" min="0" max="1" step="0.01" value="${p.d}" oninput="updateEnvParam('${comp.id}', 'adsr', 'd', this.value)"><span class="param-label">D</span></div> <div class="param-col"><input type="range" min="0" max="1" step="0.01" value="${p.s}" oninput="updateEnvParam('${comp.id}', 'adsr', 's', this.value)"><span class="param-label">S</span></div><div class="param-col"><input type="range" min="0" max="1" step="0.01" value="${p.r}" oninput="updateEnvParam('${comp.id}', 'adsr', 'r', this.value)"><span class="param-label">R</span></div>`; } }
-function drawComponentPreview(canvas, comp) { if (!canvas) return; const ctx = canvas.getContext('2d'); const dpr = window.devicePixelRatio || 1; const r = canvas.getBoundingClientRect(); canvas.width = r.width * dpr; canvas.height = r.height * dpr; ctx.scale(dpr, dpr); ctx.clearRect(0, 0, r.width, r.height); ctx.beginPath(); ctx.strokeStyle = '#1484e6'; ctx.lineWidth = 2; ctx.moveTo(0, r.height / 2); for (let x = 0; x <= r.width; x++) { const t = (x / r.width) * 1.0; const val = comp.amp * Math.sin(2 * Math.PI * comp.freq * t); ctx.lineTo(x, r.height / 2 - (val / 2.5) * (r.height / 2)); } ctx.stroke(); }
-function drawEnvelopePreview(canvas, comp) { if (!canvas) return; const ctx = canvas.getContext('2d'); const dpr = window.devicePixelRatio || 1; const r = canvas.getBoundingClientRect(); canvas.width = r.width * dpr; canvas.height = r.height * dpr; ctx.scale(dpr, dpr); const w = r.width, h = r.height; ctx.clearRect(0, 0, w, h); ctx.beginPath(); ctx.strokeStyle = '#eee'; ctx.moveTo(0, h); ctx.lineTo(w, h); ctx.stroke(); ctx.beginPath(); ctx.strokeStyle = '#1484e6'; ctx.lineWidth = 2; for (let i = 0; i <= 100; i++) { const t = i / 100; const val = getEnvelopeValue(t, comp.envelopeType, comp.envelopeParams); const x = t * w; const y = h - (val * h * 0.9) - 2; if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y); } ctx.stroke(); }
-function getEnvelopeValue(tNorm, type, params) { if (type === 'gaussian') { const p = params.gaussian; const num = Math.pow(tNorm - p.center, 2); const den = 2 * Math.pow(p.width, 2); return Math.exp(-num / den); } else { const p = params.adsr; const t = tNorm; if (t < p.a) return t / p.a; else if (t < p.a + p.d) return 1 - ((t - p.a) / p.d) * (1 - p.s); else if (t < 1.0 - p.r) return p.s; else return Math.max(0, p.s * (1 - ((t - (1.0 - p.r)) / p.r))); } }
-function getSignalValueAt(t) { let val = 0; state.components.forEach(comp => { if (t < comp.startTime || t > comp.endTime) return; const duration = comp.endTime - comp.startTime; let ampOffset = 1; if (duration > 0.01) { const tNorm = (t - comp.startTime) / duration; ampOffset = getEnvelopeValue(tNorm, comp.envelopeType, comp.envelopeParams); } val += comp.amp * Math.cos(2 * Math.PI * comp.freq * t) * ampOffset; }); return val; }
-function fft(data) { const N = data.length; if (N <= 1) return data; const even = fft(data.filter((_, i) => i % 2 === 0)); const odd = fft(data.filter((_, i) => i % 2 === 1)); const result = new Array(N); for (let k = 0; k < N / 2; k++) { const angle = -2 * Math.PI * k / N; const re = Math.cos(angle); const im = Math.sin(angle); const oddRe = odd[k].re * re - odd[k].im * im; const oddIm = odd[k].re * im + odd[k].im * re; result[k] = { re: even[k].re + oddRe, im: even[k].im + oddIm }; result[k + N / 2] = { re: even[k].re - oddRe, im: even[k].im - oddIm }; } return result; }
-function drawSpline(ctx, pts, useSmoothing) { if (pts.length < 2) return; if (!useSmoothing) { pts.forEach((p, i) => { if (i == 0) ctx.moveTo(p.x, p.y); else ctx.lineTo(p.x, p.y); }); return; } ctx.moveTo(pts[0].x, pts[0].y); for (let i = 1; i < pts.length - 1; i++) { const xc = (pts[i].x + pts[i + 1].x) / 2; const yc = (pts[i].y + pts[i + 1].y) / 2; ctx.quadraticCurveTo(pts[i].x, pts[i].y, xc, yc); } ctx.lineTo(pts[pts.length - 1].x, pts[pts.length - 1].y); }
+window.removeComponent = (index) => {
+    state.components.splice(index, 1);
+    renderComponentsUI();
+    saveState();
+};
+
+window.updateComponent = (id, prop, value) => {
+    const c = state.components.find(x => x.id === id);
+    if (c) {
+        c[prop] = parseFloat(value);
+        document.getElementById((prop === 'freq' ? 'f-val-' : 'a-val-') + id).innerText = value + (prop === 'freq' ? ' Hz' : '');
+        drawComponentPreview(document.getElementById(`preview-${c.id}`), c);
+        saveState();
+    }
+};
+
+window.setEnvelopeType = (id, type) => {
+    const c = state.components.find(x => x.id === id);
+    if (c) {
+        c.envelopeType = type;
+        renderComponentsUI();
+        saveState();
+    }
+};
+
+window.updateEnvParam = (id, type, param, value) => {
+    const c = state.components.find(x => x.id === id);
+    if (c) {
+        c.envelopeParams[type][param] = parseFloat(value);
+        saveState();
+        drawEnvelopePreview(document.getElementById(`env-prev-${id}`), c);
+    }
+};
+
+window.updateTimeConstraint = (id, type, value) => {
+    const c = state.components.find(x => x.id === id);
+    if (!c) return;
+    updateTimeConstraintLogic(c, type, parseFloat(value));
+};
+
+function updateTimeConstraintLogic(comp, type, value) {
+    if (type === 'start') {
+        if (value >= comp.endTime) {
+            comp.endTime = Math.min(value + 0.1, 5.0);
+            if (comp.endTime === 5.0 && value > 4.9) value = 4.9;
+        }
+        comp.startTime = value;
+    } else {
+        if (value <= comp.startTime) {
+            comp.startTime = Math.max(value - 0.1, 0);
+            if (comp.startTime === 0 && value < 0.1) value = 0.1;
+        }
+        comp.endTime = value;
+    }
+
+    const pv = document.getElementById(`preview-${comp.id}`);
+    if (pv && pv.closest('.component-body')) {
+        const wrap = pv.closest('.component-body');
+        const tf = wrap.querySelector('.double-slider-fill');
+        const ips = wrap.querySelectorAll('.double-slider-input');
+        const MAX = 5.0;
+
+        if (tf) {
+            tf.style.left = (comp.startTime / MAX) * 100 + '%';
+            tf.style.width = ((comp.endTime - comp.startTime) / MAX) * 100 + '%';
+        }
+
+        if (ips.length === 2) {
+            if (type === 'start') ips[1].value = comp.endTime;
+            else ips[0].value = comp.startTime;
+        }
+
+        const lb = document.getElementById(`time-label-${comp.id}`);
+        if (lb) lb.innerHTML = `TIME CONSTRAINT (${comp.startTime.toFixed(2)}s - ${comp.endTime.toFixed(2)}s)`;
+    }
+    saveState();
+}
+function renderComponentsUI() {
+    elements.componentsContainer.innerHTML = '';
+    state.components.forEach((comp, index) => {
+        const el = document.createElement('div');
+        el.className = 'component-row';
+        el.innerHTML = `<div class="component-header"><span>WAVE ${index + 1}</span><span class="material-symbols-outlined remove-btn" style="font-size: 16px;" onclick="removeComponent(${index})">close</span></div><div class="component-body"><div class="component-controls"><div class="component-control-item"><div class="component-slider-wrapper"><span class="component-label">FREQ</span><input type="range" class="compact-range" value="${comp.freq}" min="0.5" max="50" step="0.5" oninput="updateComponent('${comp.id}', 'freq', this.value)"></div><div id="f-val-${comp.id}" class="component-value">${comp.freq} Hz</div></div><div class="component-control-item"><div class="component-slider-wrapper"><span class="component-label">AMP</span><input type="range" class="compact-range" value="${comp.amp}" min="0" max="2" step="0.1" oninput="updateComponent('${comp.id}', 'amp', this.value)"></div><div id="a-val-${comp.id}" class="component-value">${comp.amp}</div></div></div><div class="component-preview-wrapper"><canvas id="preview-${comp.id}" width="100" height="28"></canvas></div><div style="margin-top: 8px;"><div class="component-label" id="time-label-${comp.id}">TIME (${comp.startTime.toFixed(2)}s - ${comp.endTime.toFixed(2)}s)</div><div class="double-slider-wrapper"><div class="double-slider-track"></div><div class="double-slider-fill" style="left: ${(comp.startTime / 5.0) * 100}%; width: ${((comp.endTime - comp.startTime) / 5.0) * 100}%"></div><input type="range" class="double-slider-input" min="0" max="5" step="0.1" value="${comp.startTime}" oninput="updateTimeConstraint('${comp.id}', 'start', this.value)"><input type="range" class="double-slider-input" min="0" max="5" step="0.1" value="${comp.endTime}" oninput="updateTimeConstraint('${comp.id}', 'end', this.value)"></div></div><div class="envelope-section"><div class="envelope-header"><span class="component-label">ENVELOPE</span><div class="segmented-control" style="margin: 0; width: 120px; transform: scale(0.9);"><div class="segmented-option ${comp.envelopeType === 'gaussian' ? 'active' : ''}" onclick="setEnvelopeType('${comp.id}', 'gaussian')">GAUSS</div><div class="segmented-option ${comp.envelopeType === 'adsr' ? 'active' : ''}" onclick="setEnvelopeType('${comp.id}', 'adsr')">ADSR</div></div></div><canvas class="envelope-preview" id="env-prev-${comp.id}" width="200" height="80"></canvas><div class="envelope-params">${getEnvelopeControls(comp)}</div></div></div>`;
+        elements.componentsContainer.appendChild(el);
+        drawComponentPreview(document.getElementById(`preview-${comp.id}`), comp);
+        drawEnvelopePreview(document.getElementById(`env-prev-${comp.id}`), comp);
+    });
+}
+
+function getEnvelopeControls(comp) {
+    if (comp.envelopeType === 'gaussian') {
+        const p = comp.envelopeParams.gaussian;
+        return `<div class="param-col span-2"><input type="range" min="0" max="1" step="0.01" value="${p.center}" oninput="updateEnvParam('${comp.id}', 'gaussian', 'center', this.value)"><span class="param-label">CENTER</span></div><div class="param-col span-2"><input type="range" min="0.05" max="0.5" step="0.01" value="${p.width}" oninput="updateEnvParam('${comp.id}', 'gaussian', 'width', this.value)"><span class="param-label">WIDTH</span></div>`;
+    } else {
+        const p = comp.envelopeParams.adsr;
+        return `<div class="param-col"><input type="range" min="0" max="1" step="0.01" value="${p.a}" oninput="updateEnvParam('${comp.id}', 'adsr', 'a', this.value)"><span class="param-label">A</span></div><div class="param-col"><input type="range" min="0" max="1" step="0.01" value="${p.d}" oninput="updateEnvParam('${comp.id}', 'adsr', 'd', this.value)"><span class="param-label">D</span></div> <div class="param-col"><input type="range" min="0" max="1" step="0.01" value="${p.s}" oninput="updateEnvParam('${comp.id}', 'adsr', 's', this.value)"><span class="param-label">S</span></div><div class="param-col"><input type="range" min="0" max="1" step="0.01" value="${p.r}" oninput="updateEnvParam('${comp.id}', 'adsr', 'r', this.value)"><span class="param-label">R</span></div>`;
+    }
+}
+
+function drawComponentPreview(canvas, comp) {
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const dpr = window.devicePixelRatio || 1;
+    const r = canvas.getBoundingClientRect();
+    canvas.width = r.width * dpr;
+    canvas.height = r.height * dpr;
+    ctx.scale(dpr, dpr);
+    ctx.clearRect(0, 0, r.width, r.height);
+    ctx.beginPath();
+    ctx.strokeStyle = '#1484e6';
+    ctx.lineWidth = 2;
+    ctx.moveTo(0, r.height / 2);
+    for (let x = 0; x <= r.width; x++) {
+        const t = (x / r.width) * 1.0;
+        const val = comp.amp * Math.sin(2 * Math.PI * comp.freq * t);
+        ctx.lineTo(x, r.height / 2 - (val / 2.5) * (r.height / 2));
+    }
+    ctx.stroke();
+}
+
+function drawEnvelopePreview(canvas, comp) {
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const dpr = window.devicePixelRatio || 1;
+    const r = canvas.getBoundingClientRect();
+    canvas.width = r.width * dpr;
+    canvas.height = r.height * dpr;
+    ctx.scale(dpr, dpr);
+    const w = r.width,
+        h = r.height;
+    ctx.clearRect(0, 0, w, h);
+    ctx.beginPath();
+    ctx.strokeStyle = '#eee';
+    ctx.moveTo(0, h);
+    ctx.lineTo(w, h);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.strokeStyle = '#1484e6';
+    ctx.lineWidth = 2;
+    for (let i = 0; i <= 100; i++) {
+        const t = i / 100;
+        const val = getEnvelopeValue(t, comp.envelopeType, comp.envelopeParams);
+        const x = t * w;
+        const y = h - (val * h * 0.9) - 2;
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+}
+
+function getEnvelopeValue(tNorm, type, params) {
+    if (type === 'gaussian') {
+        const p = params.gaussian;
+        const num = Math.pow(tNorm - p.center, 2);
+        const den = 2 * Math.pow(p.width, 2);
+        return Math.exp(-num / den);
+    } else {
+        const p = params.adsr;
+        const t = tNorm;
+        if (t < p.a) return t / p.a;
+        else if (t < p.a + p.d) return 1 - ((t - p.a) / p.d) * (1 - p.s);
+        else if (t < 1.0 - p.r) return p.s;
+        else return Math.max(0, p.s * (1 - ((t - (1.0 - p.r)) / p.r)));
+    }
+}
+function getSignalValueAt(t) {
+    let val = 0;
+    state.components.forEach(comp => {
+        if (t < comp.startTime || t > comp.endTime) return;
+        const duration = comp.endTime - comp.startTime;
+        let ampOffset = 1;
+        if (duration > 0.01) {
+            const tNorm = (t - comp.startTime) / duration;
+            ampOffset = getEnvelopeValue(tNorm, comp.envelopeType, comp.envelopeParams);
+        }
+        val += comp.amp * Math.cos(2 * Math.PI * comp.freq * t) * ampOffset;
+    });
+    return val;
+}
+
+function fft(data) {
+    const N = data.length;
+    if (N <= 1) return data;
+    const even = fft(data.filter((_, i) => i % 2 === 0));
+    const odd = fft(data.filter((_, i) => i % 2 === 1));
+    const result = new Array(N);
+    for (let k = 0; k < N / 2; k++) {
+        const angle = -2 * Math.PI * k / N;
+        const re = Math.cos(angle);
+        const im = Math.sin(angle);
+        const oddRe = odd[k].re * re - odd[k].im * im;
+        const oddIm = odd[k].re * im + odd[k].im * re;
+        result[k] = {
+            re: even[k].re + oddRe,
+            im: even[k].im + oddIm
+        };
+        result[k + N / 2] = {
+            re: even[k].re - oddRe,
+            im: even[k].im - oddIm
+        };
+    }
+    return result;
+}
+
+function drawSpline(ctx, pts, useSmoothing) {
+    if (pts.length < 2) return;
+    if (!useSmoothing) {
+        pts.forEach((p, i) => {
+            if (i == 0) ctx.moveTo(p.x, p.y);
+            else ctx.lineTo(p.x, p.y);
+        });
+        return;
+    }
+    ctx.moveTo(pts[0].x, pts[0].y);
+    for (let i = 1; i < pts.length - 1; i++) {
+        const xc = (pts[i].x + pts[i + 1].x) / 2;
+        const yc = (pts[i].y + pts[i + 1].y) / 2;
+        ctx.quadraticCurveTo(pts[i].x, pts[i].y, xc, yc);
+    }
+    ctx.lineTo(pts[pts.length - 1].x, pts[pts.length - 1].y);
+}
+
 function drawAxis(ctx, w, h, xRange, yRange, suffixX, suffixY) {
-    ctx.strokeStyle = '#ccc'; ctx.lineWidth = 1; ctx.font = '10px monospace'; ctx.fillStyle = '#888';
-    for (let i = 0; i <= 5; i++) { const t = i / 5; const x = t * w; if (x < 2 || x > w - 2) continue; ctx.beginPath(); ctx.moveTo(x, h); ctx.lineTo(x, h - 5); ctx.stroke(); const val = xRange[0] + t * (xRange[1] - xRange[0]); const text = val.toFixed(1) + (suffixX || ''); const tw = ctx.measureText(text).width; ctx.fillText(text, Math.min(w - tw - 2, Math.max(2, x - tw / 2)), h - 6); }
-    for (let i = 0; i <= 4; i++) { const t = i / 4; const y = h - t * h; if (y < 8 || y > h - 8) continue; ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(5, y); ctx.stroke(); const val = yRange[0] + t * (yRange[1] - yRange[0]); const text = val.toFixed(1) + (suffixY || ''); ctx.fillText(text, 6, y + 3); }
+    ctx.strokeStyle = '#ccc';
+    ctx.lineWidth = 1;
+    ctx.font = '10px monospace';
+    ctx.fillStyle = '#888';
+
+    // X-Axis
+    for (let i = 0; i <= 5; i++) {
+        const t = i / 5;
+        const x = t * w;
+        if (x < 2 || x > w - 2) continue;
+        
+        ctx.beginPath();
+        ctx.moveTo(x, h);
+        ctx.lineTo(x, h - 5);
+        ctx.stroke();
+        
+        const val = xRange[0] + t * (xRange[1] - xRange[0]);
+        const text = val.toFixed(1) + (suffixX || '');
+        const tw = ctx.measureText(text).width;
+        ctx.fillText(text, Math.min(w - tw - 2, Math.max(2, x - tw / 2)), h - 6);
+    }
+
+    // Y-Axis
+    for (let i = 0; i <= 4; i++) {
+        const t = i / 4;
+        const y = h - t * h;
+        if (y < 8 || y > h - 8) continue;
+        
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(5, y);
+        ctx.stroke();
+        
+        const val = yRange[0] + t * (yRange[1] - yRange[0]);
+        const text = val.toFixed(1) + (suffixY || '');
+        ctx.fillText(text, 6, y + 3);
+    }
 }
 
 function animate() {
@@ -638,20 +984,57 @@ function animate() {
     let safeSampling = Math.min(Math.max(1, state.fftSampling), 4);
     const multiplier = Math.pow(2, Math.floor(safeSampling) - 1);
     const N_FFT = N_Base * multiplier;
+    
     if (state.view3d.hasInteracted && elements.hints.view3d) elements.hints.view3d.style.opacity = 0;
     if (state.viewRI.hasInteracted && elements.hints.viewRI) elements.hints.viewRI.style.opacity = 0;
+    
     const complexSignal = new Array(N_FFT);
-    for (let i = 0; i < N_Base; i++) { const t = i / state.sampleRate; complexSignal[i] = { re: getSignalValueAt(t), im: 0 }; }
-    for (let i = N_Base; i < N_FFT; i++) complexSignal[i] = { re: 0, im: 0 };
+    for (let i = 0; i < N_Base; i++) {
+        const t = i / state.sampleRate;
+        complexSignal[i] = { re: getSignalValueAt(t), im: 0 };
+    }
+    for (let i = N_Base; i < N_FFT; i++) {
+        complexSignal[i] = { re: 0, im: 0 };
+    }
+    
     let fftResult = fft(complexSignal);
-    const displaySignal = []; for (let i = 0; i < N_Base; i++) displaySignal.push({ t: i / state.sampleRate, val: complexSignal[i].re }); lastSignalData = displaySignal;
+    
+    const displaySignal = [];
+    for (let i = 0; i < N_Base; i++) {
+        displaySignal.push({ t: i / state.sampleRate, val: complexSignal[i].re });
+    }
+    lastSignalData = displaySignal;
 
     // Winding
-    const windingPoints = []; let comRe = 0, comIm = 0; const numSteps = 3000; const dt = 5.0 / numSteps; let selectedTimePoint = { re: 0, im: 0 };
-    { const val = getSignalValueAt(state.selectedTime); const angle = 2 * Math.PI * state.selectedFrequency * state.selectedTime; selectedTimePoint = { re: val * Math.cos(angle), im: val * Math.sin(angle) }; }
-    for (let i = 0; i <= numSteps; i++) { const t = i * dt; const val = getSignalValueAt(t); const angle = 2 * Math.PI * state.selectedFrequency * t; windingPoints.push({ re: val * Math.cos(angle), im: val * Math.sin(angle) }); }
-    const dF = state.sampleRate / N_FFT; const idx = Math.round(state.selectedFrequency / dF);
-    if (idx < fftResult.length) { comRe = fftResult[idx].re / (N_Base / 2); comIm = fftResult[idx].im / (N_Base / 2); }
+    const windingPoints = [];
+    let comRe = 0, comIm = 0;
+    const numSteps = 3000;
+    const dt = 5.0 / numSteps;
+    let selectedTimePoint = { re: 0, im: 0 };
+    
+    {
+        const val = getSignalValueAt(state.selectedTime);
+        const angle = 2 * Math.PI * state.selectedFrequency * state.selectedTime;
+        selectedTimePoint = { re: val * Math.cos(angle), im: val * Math.sin(angle) };
+    }
+    
+    for (let i = 0; i <= numSteps; i++) {
+        const t = i * dt;
+        const val = getSignalValueAt(t);
+        const angle = 2 * Math.PI * state.selectedFrequency * t;
+        windingPoints.push({
+            re: val * Math.cos(angle),
+            im: val * Math.sin(angle)
+        });
+    }
+    
+    const dF = state.sampleRate / N_FFT;
+    const idx = Math.round(state.selectedFrequency / dF);
+    
+    if (idx < fftResult.length) {
+        comRe = fftResult[idx].re / (N_Base / 2);
+        comIm = fftResult[idx].im / (N_Base / 2);
+    }
 
     let maxCompFreq = 0; state.components.forEach(c => { if (c.freq > maxCompFreq) maxCompFreq = c.freq; });
     
@@ -671,8 +1054,20 @@ function animate() {
 }
 
 function drawSignalPlot(ctx, data, canvas) {
-    const w = canvas.width / (window.devicePixelRatio || 1); const h = canvas.height / (window.devicePixelRatio || 1); const yRange = [-2, 2];
-    if (state.showAxis) { drawAxis(ctx, w, h, [state.zoomStart, state.zoomEnd], yRange, ' s', ''); const y0 = h / 2; ctx.beginPath(); ctx.strokeStyle = '#eee'; ctx.lineWidth = 1; ctx.moveTo(0, y0); ctx.lineTo(w, y0); ctx.stroke(); }
+    const w = canvas.width / (window.devicePixelRatio || 1);
+    const h = canvas.height / (window.devicePixelRatio || 1);
+    const yRange = [-2, 2];
+    
+    if (state.showAxis) {
+        drawAxis(ctx, w, h, [state.zoomStart, state.zoomEnd], yRange, ' s', '');
+        const y0 = h / 2;
+        ctx.beginPath();
+        ctx.strokeStyle = '#eee';
+        ctx.lineWidth = 1;
+        ctx.moveTo(0, y0);
+        ctx.lineTo(w, y0);
+        ctx.stroke();
+    }
     
     // Use the full data array logic but optimized loop
     // Convert absolute time to x
@@ -686,6 +1081,7 @@ function drawSignalPlot(ctx, data, canvas) {
     // Determine start/end indices based on zoom
     // Increase padding drastically (-50/+50) to catch any off-screen segments
     const sampleRate = data.length / totalDuration;
+    
     // Fix: Ensure we start drawing BEFORE the visible window
     // If zoomStart is 0, we want index 0 or negative padding.
     // Floating point precision might make 0.499999 so we use floor with padding.
@@ -712,7 +1108,11 @@ function drawSignalPlot(ctx, data, canvas) {
 
     // We iterate the relevant slice but calculate X based on exact time of that sample
     if (idxEnd > idxStart) {
-        ctx.beginPath(); ctx.strokeStyle = '#1a1a1a'; ctx.lineWidth = 1.5; const yScale = h / 4; const yCenter = h / 2;
+        ctx.beginPath();
+        ctx.strokeStyle = '#1a1a1a';
+        ctx.lineWidth = 1.5;
+        const yScale = h / 4;
+        const yCenter = h / 2;
         
         let first = true;
         for(let i=idxStart; i<idxEnd; i++) {
@@ -731,26 +1131,114 @@ function drawSignalPlot(ctx, data, canvas) {
         ctx.stroke();
     }
 
-    if (isPlaying) { let t = audioCtx.currentTime - audioStartTime; if (t >= state.zoomStart && t <= state.zoomEnd) { const x = timeToX(t); ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.strokeStyle = 'rgba(20, 132, 230, 0.8)'; ctx.lineWidth = 2; ctx.stroke(); } }
+    if (isPlaying) {
+        let t = audioCtx.currentTime - audioStartTime;
+        if (t >= state.zoomStart && t <= state.zoomEnd) {
+            const x = timeToX(t);
+            ctx.beginPath();
+            ctx.moveTo(x, 0);
+            ctx.lineTo(x, h);
+            ctx.strokeStyle = 'rgba(20, 132, 230, 0.8)';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+        }
+    }
+    
     const tX = timeToX(state.selectedTime);
     if (tX >= -2 && tX <= w + 2) { 
-        ctx.beginPath(); ctx.moveTo(tX, 0); ctx.lineTo(tX, h); ctx.strokeStyle = '#1484e6'; ctx.lineWidth = 1; ctx.setLineDash([5, 5]); ctx.stroke(); ctx.setLineDash([]); 
-        const val = getSignalValueAt(state.selectedTime); const y = h/2 - val * (h/4); 
-        ctx.beginPath(); ctx.fillStyle = '#1484e6'; ctx.arc(tX, y, 4, 0, Math.PI * 2); ctx.fill(); 
+        ctx.beginPath();
+        ctx.moveTo(tX, 0);
+        ctx.lineTo(tX, h);
+        ctx.strokeStyle = '#1484e6';
+        ctx.lineWidth = 1;
+        ctx.setLineDash([5, 5]);
+        ctx.stroke();
+        
+        ctx.setLineDash([]); 
+        const val = getSignalValueAt(state.selectedTime);
+        const y = h/2 - val * (h/4); 
+        ctx.beginPath();
+        ctx.fillStyle = '#1484e6';
+        ctx.arc(tX, y, 4, 0, Math.PI * 2);
+        ctx.fill(); 
     }
 }
 
-function project3D(x, y, z, cx, cy, scale) { cx += state.view3d.panX; cy += state.view3d.panY; const cosX = Math.cos(state.view3d.rotX); const sinX = Math.sin(state.view3d.rotX); const cosY = Math.cos(state.view3d.rotY); const sinY = Math.sin(state.view3d.rotY); let y1 = y * cosX - z * sinX; let z1 = y * sinX + z * cosX; let x2 = x * cosY + z1 * sinY; let z2 = -x * sinY + z1 * cosY; const s = scale * state.view3d.scale; return { x: cx + x2 * s, y: cy - y1 * s }; }
+function project3D(x, y, z, cx, cy, scale) {
+    cx += state.view3d.panX;
+    cy += state.view3d.panY;
+    
+    const cosX = Math.cos(state.view3d.rotX);
+    const sinX = Math.sin(state.view3d.rotX);
+    const cosY = Math.cos(state.view3d.rotY);
+    const sinY = Math.sin(state.view3d.rotY);
+    
+    let y1 = y * cosX - z * sinX;
+    let z1 = y * sinX + z * cosX;
+    let x2 = x * cosY + z1 * sinY;
+    let z2 = -x * sinY + z1 * cosY;
+    
+    const s = scale * state.view3d.scale;
+    return {
+        x: cx + x2 * s,
+        y: cy - y1 * s
+    };
+}
 
 function draw3DPlot(ctx, fft, canvas, maxFreq, N_FFT) {
-    const w = canvas.width / (window.devicePixelRatio || 1); const h = canvas.height / (window.devicePixelRatio || 1);
-    const cx = w / 2; const cy = h / 2; const scale = Math.min(w, h) * 0.4;
+    const w = canvas.width / (window.devicePixelRatio || 1);
+    const h = canvas.height / (window.devicePixelRatio || 1);
+    const cx = w / 2;
+    const cy = h / 2;
+    const scale = Math.min(w, h) * 0.4;
     const xLen = 1.1;
-    const corners = [[0, 1, 1], [0, 1, -1], [0, -1, 1], [0, -1, -1], [xLen, 1, 1], [xLen, 1, -1], [xLen, -1, 1], [xLen, -1, -1]].map(c => project3D(c[0], c[1], c[2], cx, cy, scale));
-    ctx.beginPath(); ctx.lineWidth = 0.5; ctx.strokeStyle = '#e0e0e0';[[0, 1], [0, 2], [1, 3], [2, 3], [4, 5], [4, 6], [5, 7], [6, 7], [0, 4], [1, 5], [2, 6], [3, 7]].forEach(l => { ctx.moveTo(corners[l[0]].x, corners[l[0]].y); ctx.lineTo(corners[l[1]].x, corners[l[1]].y); }); ctx.stroke();
-    const origin = project3D(0, 0, 0, cx, cy, scale); const xAxis = project3D(1.2, 0, 0, cx, cy, scale); const yTop = project3D(0, 1.1, 0, cx, cy, scale); const zTop = project3D(0, 0, 1.1, cx, cy, scale);
-    ctx.lineWidth = 1; ctx.strokeStyle = '#ccc'; ctx.beginPath(); ctx.moveTo(origin.x, origin.y); ctx.lineTo(xAxis.x, xAxis.y); ctx.moveTo(origin.x, origin.y); ctx.lineTo(yTop.x, yTop.y); ctx.moveTo(origin.x, origin.y); ctx.lineTo(zTop.x, zTop.y); ctx.stroke();
-    ctx.fillStyle = '#888'; ctx.font = '10px monospace'; ctx.fillText(state.showAxis ? 'Freq [Hz]' : 'Freq', xAxis.x, xAxis.y); ctx.fillText('Re', yTop.x, yTop.y); ctx.fillText('Im', zTop.x, zTop.y);
+    
+    const corners = [
+        [0, 1, 1],
+        [0, 1, -1],
+        [0, -1, 1],
+        [0, -1, -1],
+        [xLen, 1, 1],
+        [xLen, 1, -1],
+        [xLen, -1, 1],
+        [xLen, -1, -1]
+    ].map(c => project3D(c[0], c[1], c[2], cx, cy, scale));
+
+    ctx.beginPath();
+    ctx.lineWidth = 0.5;
+    ctx.strokeStyle = '#e0e0e0';
+    
+    [
+        [0, 1], [0, 2], [1, 3], [2, 3], 
+        [4, 5], [4, 6], [5, 7], [6, 7], 
+        [0, 4], [1, 5], [2, 6], [3, 7]
+    ].forEach(l => {
+        ctx.moveTo(corners[l[0]].x, corners[l[0]].y);
+        ctx.lineTo(corners[l[1]].x, corners[l[1]].y);
+    });
+    ctx.stroke();
+
+    const origin = project3D(0, 0, 0, cx, cy, scale);
+    const xAxis = project3D(1.2, 0, 0, cx, cy, scale);
+    const yTop = project3D(0, 1.1, 0, cx, cy, scale);
+    const zTop = project3D(0, 0, 1.1, cx, cy, scale);
+    
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = '#ccc';
+    ctx.beginPath();
+    ctx.moveTo(origin.x, origin.y);
+    ctx.lineTo(xAxis.x, xAxis.y);
+    ctx.moveTo(origin.x, origin.y);
+    ctx.lineTo(yTop.x, yTop.y);
+    ctx.moveTo(origin.x, origin.y);
+    ctx.lineTo(zTop.x, zTop.y);
+    ctx.stroke();
+    
+    ctx.fillStyle = '#888';
+    ctx.font = '10px monospace';
+    ctx.fillText(state.showAxis ? 'Freq [Hz]' : 'Freq', xAxis.x, xAxis.y);
+    ctx.fillText('Re', yTop.x, yTop.y);
+    ctx.fillText('Im', zTop.x, zTop.y);
     if (state.showAxis) { 
         // Draw multiple notches along Frequency Axis
         const numNotches = 5;
@@ -876,21 +1364,90 @@ function draw3DPlot(ctx, fft, canvas, maxFreq, N_FFT) {
     }
 }
 function drawRIPlot(ctx, windingPoints, comRe, comIm, canvas, fft, maxFreq, N_FFT, timePoint) {
-    const w = canvas.width / (window.devicePixelRatio || 1); const h = canvas.height / (window.devicePixelRatio || 1);
-    const cx = w / 2 + state.viewRI.panX; const cy = h / 2 + state.viewRI.panY; const baseScale = Math.min(w, h) * 0.35; const scale = baseScale * state.viewRI.scale;
-    if (state.showAxis) { ctx.beginPath(); ctx.strokeStyle = '#eee'; ctx.moveTo(cx, 0); ctx.lineTo(cx, h); ctx.moveTo(0, cy); ctx.lineTo(w, cy); ctx.stroke(); }
-    const displayScale = scale * 0.5; const mappedWinding = windingPoints.map(p => ({ x: cx + p.re * displayScale, y: cy - p.im * displayScale }));
-    ctx.beginPath(); ctx.strokeStyle = 'rgba(20, 132, 230, 0.8)'; ctx.lineWidth = 1.5; drawSpline(ctx, mappedWinding, state.fftSmoothing); ctx.stroke();
-    if (timePoint) { const tx = cx + timePoint.re * displayScale; const ty = cy - timePoint.im * displayScale; ctx.beginPath(); ctx.fillStyle = '#1484e6'; ctx.arc(tx, ty, 4, 0, Math.PI * 2); ctx.fill(); }
-    const dF = state.sampleRate / N_FFT; const maxK = (state.selectedFrequency / dF); const N_Base = 2048; const scaleFactor = (N_Base / 2);
-    const comPts = []; for (let k = 0; k <= Math.ceil(maxK); k++) { if (k >= fft.length / 2) break; const re = fft[k].re / scaleFactor; const im = fft[k].im / scaleFactor; comPts.push({ x: cx + re * displayScale, y: cy - im * displayScale }); }
-    ctx.beginPath(); ctx.strokeStyle = '#888'; ctx.lineWidth = 1.5; ctx.setLineDash([4, 4]); drawSpline(ctx, comPts, state.fftSmoothing); ctx.stroke(); ctx.setLineDash([]);
-    const comX = cx + comRe * displayScale; const comY = cy - comIm * displayScale; ctx.beginPath(); ctx.fillStyle = '#000000'; ctx.arc(comX, comY, 5, 0, Math.PI * 2); ctx.fill(); ctx.beginPath(); ctx.strokeStyle = 'rgba(20, 132, 230, 0.5)'; ctx.moveTo(cx, cy); ctx.lineTo(comX, comY); ctx.stroke();
+    const w = canvas.width / (window.devicePixelRatio || 1);
+    const h = canvas.height / (window.devicePixelRatio || 1);
+    const cx = w / 2 + state.viewRI.panX;
+    const cy = h / 2 + state.viewRI.panY;
+    const baseScale = Math.min(w, h) * 0.35;
+    const scale = baseScale * state.viewRI.scale;
+    
+    if (state.showAxis) {
+        ctx.beginPath();
+        ctx.strokeStyle = '#eee';
+        ctx.moveTo(cx, 0);
+        ctx.lineTo(cx, h);
+        ctx.moveTo(0, cy);
+        ctx.lineTo(w, cy);
+        ctx.stroke();
+    }
+    
+    const displayScale = scale * 0.5;
+    const mappedWinding = windingPoints.map(p => ({
+        x: cx + p.re * displayScale,
+        y: cy - p.im * displayScale
+    }));
+    
+    ctx.beginPath();
+    ctx.strokeStyle = 'rgba(20, 132, 230, 0.8)';
+    ctx.lineWidth = 1.5;
+    drawSpline(ctx, mappedWinding, state.fftSmoothing);
+    ctx.stroke();
+    
+    if (timePoint) {
+        const tx = cx + timePoint.re * displayScale;
+        const ty = cy - timePoint.im * displayScale;
+        ctx.beginPath();
+        ctx.fillStyle = '#1484e6';
+        ctx.arc(tx, ty, 4, 0, Math.PI * 2);
+        ctx.fill();
+    }
+    
+    const dF = state.sampleRate / N_FFT;
+    const maxK = (state.selectedFrequency / dF);
+    const N_Base = 2048;
+    const scaleFactor = (N_Base / 2);
+    const comPts = [];
+    
+    for (let k = 0; k <= Math.ceil(maxK); k++) {
+        if (k >= fft.length / 2) break;
+        const re = fft[k].re / scaleFactor;
+        const im = fft[k].im / scaleFactor;
+        comPts.push({
+            x: cx + re * displayScale,
+            y: cy - im * displayScale
+        });
+    }
+    
+    ctx.beginPath();
+    ctx.strokeStyle = '#888';
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([4, 4]);
+    drawSpline(ctx, comPts, state.fftSmoothing);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    
+    const comX = cx + comRe * displayScale;
+    const comY = cy - comIm * displayScale;
+    ctx.beginPath();
+    ctx.fillStyle = '#000000';
+    ctx.arc(comX, comY, 5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.strokeStyle = 'rgba(20, 132, 230, 0.5)';
+    ctx.moveTo(cx, cy);
+    ctx.lineTo(comX, comY);
+    ctx.stroke();
 }
 function drawAbsTransform(ctx, fft, canvas, maxFreq, N_FFT) {
-    const w = canvas.width / (window.devicePixelRatio || 1); const h = canvas.height / (window.devicePixelRatio || 1);
-    const startF = state.viewAbs.startFreq; const endF = state.viewAbs.endFreq > 0 ? state.viewAbs.endFreq : maxFreq; const freqRange = endF - startF;
-    let yZero = h; let yScale = h * 0.8;
+    const w = canvas.width / (window.devicePixelRatio || 1);
+    const h = canvas.height / (window.devicePixelRatio || 1);
+    const startF = state.viewAbs.startFreq;
+    const endF = state.viewAbs.endFreq > 0 ? state.viewAbs.endFreq : maxFreq;
+    const freqRange = endF - startF;
+    
+    let yZero = h;
+    let yScale = h * 0.8;
+    
     if (state.showReIm) { 
         yZero = h / 2; 
         yScale = (h / 2) * 0.8; 
@@ -904,32 +1461,83 @@ function drawAbsTransform(ctx, fft, canvas, maxFreq, N_FFT) {
         yZero = h + ((yMin) / ySpan) * h; // y position for value 0
         if (state.showAxis) drawAxis(ctx, w, h, [startF, endF], [yMin, yMax], ' Hz', ''); 
     }
-    if (state.showReIm) { ctx.beginPath(); ctx.strokeStyle = '#eee'; ctx.moveTo(0, yZero); ctx.lineTo(w, yZero); ctx.stroke(); }
+    
+    if (state.showReIm) {
+        ctx.beginPath();
+        ctx.strokeStyle = '#eee';
+        ctx.moveTo(0, yZero);
+        ctx.lineTo(w, yZero);
+        ctx.stroke();
+    }
     
     // Guard against infinite/nan X
     if (freqRange <= 0.0001) return;
 
     if (fft && fft.length > 0) {
-        const dF = state.sampleRate / N_FFT; const maxK = Math.min(Math.ceil(endF / dF), fft.length); const startK = Math.floor(startF / dF); const N_Base = 2048;
-        ctx.lineWidth = 1.5; const pts = []; const ptsRe = []; const ptsIm = [];
+        const dF = state.sampleRate / N_FFT;
+        const maxK = Math.min(Math.ceil(endF / dF), fft.length);
+        const startK = Math.floor(startF / dF);
+        const N_Base = 2048;
+        
+        ctx.lineWidth = 1.5;
+        const pts = [];
+        const ptsRe = [];
+        const ptsIm = [];
+        
         for (let k = startK; k < maxK; k++) {
-            const mag = Math.sqrt(fft[k].re ** 2 + fft[k].im ** 2); const f = k * dF;
+            const mag = Math.sqrt(fft[k].re ** 2 + fft[k].im ** 2);
+            const f = k * dF;
             const x = ((f - startF) / freqRange) * w;
+            
             pts.push({ x, y: yZero - (mag / (N_Base / 2)) * yScale });
-            if (state.showReIm) { ptsRe.push({ x, y: yZero - (fft[k].re / (N_Base / 2)) * yScale }); ptsIm.push({ x, y: yZero - (fft[k].im / (N_Base / 2)) * yScale }); }
+            
+            if (state.showReIm) {
+                ptsRe.push({ x, y: yZero - (fft[k].re / (N_Base / 2)) * yScale });
+                ptsIm.push({ x, y: yZero - (fft[k].im / (N_Base / 2)) * yScale });
+            }
         }
 
-        if (state.showReIm) { ctx.beginPath(); ctx.strokeStyle = 'rgba(20, 132, 230, 0.4)'; drawSpline(ctx, ptsRe, state.fftSmoothing); ctx.stroke(); ctx.beginPath(); ctx.strokeStyle = 'rgba(100, 100, 100, 0.4)'; drawSpline(ctx, ptsIm, state.fftSmoothing); ctx.stroke(); }
+        if (state.showReIm) {
+            ctx.beginPath();
+            ctx.strokeStyle = 'rgba(20, 132, 230, 0.4)';
+            drawSpline(ctx, ptsRe, state.fftSmoothing);
+            ctx.stroke();
+            
+            ctx.beginPath();
+            ctx.strokeStyle = 'rgba(100, 100, 100, 0.4)';
+            drawSpline(ctx, ptsIm, state.fftSmoothing);
+            ctx.stroke();
+        }
 
         if (pts.length > 0) {
             ctx.beginPath();
-            ctx.strokeStyle = '#1484e6'; ctx.fillStyle = 'rgba(20, 132, 230, 0.1)';
+            ctx.strokeStyle = '#1484e6';
+            ctx.fillStyle = 'rgba(20, 132, 230, 0.1)';
             drawSpline(ctx, pts, state.fftSmoothing);
             ctx.stroke();
         }
 
         const selX = ((state.selectedFrequency - startF) / freqRange) * w;
-        if (selX >= 0 && selX <= w) { ctx.beginPath(); ctx.strokeStyle = '#1484e6'; ctx.lineWidth = 1; ctx.setLineDash([5, 5]); ctx.moveTo(selX, 0); ctx.lineTo(selX, h); ctx.stroke(); ctx.setLineDash([]); const idx = Math.round(state.selectedFrequency / dF); const ptIdx = idx - startK; let closestY = yZero; if (ptIdx >= 0 && ptIdx < pts.length) closestY = pts[ptIdx].y; ctx.beginPath(); ctx.fillStyle = '#1484e6'; ctx.arc(selX, closestY, 4, 0, Math.PI * 2); ctx.fill(); }
+        if (selX >= 0 && selX <= w) {
+            ctx.beginPath();
+            ctx.strokeStyle = '#1484e6';
+            ctx.lineWidth = 1;
+            ctx.setLineDash([5, 5]);
+            ctx.moveTo(selX, 0);
+            ctx.lineTo(selX, h);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            
+            const idx = Math.round(state.selectedFrequency / dF);
+            const ptIdx = idx - startK;
+            let closestY = yZero;
+            if (ptIdx >= 0 && ptIdx < pts.length) closestY = pts[ptIdx].y;
+            
+            ctx.beginPath();
+            ctx.fillStyle = '#1484e6';
+            ctx.arc(selX, closestY, 4, 0, Math.PI * 2);
+            ctx.fill();
+        }
     }
 }
 // Audio State
