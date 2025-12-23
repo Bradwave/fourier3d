@@ -39,7 +39,8 @@ const state = {
     viewRI: { panX: 0, panY: 0, scale: 1.0, isPanning: false, hasInteracted: false },
     lastMouse: { x: 0, y: 0 },
     isFocusMode: false,
-    showSurface: false
+    showSurface: false,
+    isSidebarCollapsed: false
 };
 
 const elements = {
@@ -95,14 +96,16 @@ function init() {
 
 window.toggleSidebar = () => {
     document.body.classList.toggle('sidebar-collapsed');
+    state.isSidebarCollapsed = document.body.classList.contains('sidebar-collapsed');
     const btn = document.getElementById('toggle-sidebar-btn');
-    if (document.body.classList.contains('sidebar-collapsed')) {
+    if (state.isSidebarCollapsed) {
         btn.innerHTML = '<span class="material-symbols-outlined">chevron_right</span>';
         btn.title = "Show Sidebar";
     } else {
         btn.innerHTML = '<span class="material-symbols-outlined">chevron_left</span>';
         btn.title = "Hide Sidebar";
     }
+    saveState();
     // Resize plots
     setTimeout(() => {
         const ev = new Event('resize');
@@ -128,7 +131,8 @@ function saveState() {
         showReIm: state.showReIm,
         showSurface: state.showSurface,
         viewAbs: state.viewAbs,
-        isFocusMode: state.isFocusMode
+        isFocusMode: state.isFocusMode,
+        isSidebarCollapsed: state.isSidebarCollapsed
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(saved));
 }
@@ -156,6 +160,7 @@ function loadState() {
             if (parsed.view3d) state.view3d = parsed.view3d;
             if (parsed.viewRI) state.viewRI = parsed.viewRI;
             if (parsed.viewAbs) state.viewAbs = parsed.viewAbs;
+            if (parsed.isSidebarCollapsed !== undefined) state.isSidebarCollapsed = parsed.isSidebarCollapsed;
 
             elements.axisToggle.checked = state.showAxis;
             if (elements.reimToggle) elements.reimToggle.checked = state.showReIm;
@@ -170,6 +175,10 @@ function loadState() {
                 document.body.classList.add('focus-mode');
                 const icon = document.getElementById('focus-icon');
                 if(icon) icon.innerText = 'close_fullscreen';
+            }
+
+            if (state.isSidebarCollapsed) {
+                document.body.classList.add('sidebar-collapsed');
             }
             
             // Init sidebar button icon

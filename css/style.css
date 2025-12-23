@@ -961,6 +961,7 @@ button.secondary:hover {
         width: 100%;
         height: auto;
         flex: 1; /* Grow to fill space */
+        padding-bottom: 30px; /* Space for toggle button */
     }
 
     /* When sidebar collapsed on mobile, stack EVERYTHING vertically */
