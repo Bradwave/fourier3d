@@ -25,6 +25,7 @@
         </button>
 
         <!-- Sidebar Controls -->
+        <!-- Sidebar Controls -->
         <aside class="sidebar" id="main-sidebar">
             <header>
                 <h1>FOURIER 3D</h1>
@@ -33,7 +34,7 @@
 
             <!-- Signal Components (Collapsible) -->
             <div class="section-header-collapsible" data-target="components-wrapper">
-                <div class="section-title" style="border:none; margin:0; padding:0;">Signal Components</div>
+                <div class="section-title section-title-clean">Signal Components</div>
                 <span class="material-symbols-outlined dropdown-icon">expand_more</span>
             </div>
 
@@ -51,7 +52,7 @@
 
             <!-- Audio Settings (Collapsible) -->
             <div class="section-header-collapsible" data-target="audio-wrapper">
-                <div class="section-title" style="border:none; margin:0; padding:0;">Audio Settings</div>
+                <div class="section-title section-title-clean">Audio Settings</div>
                 <span class="material-symbols-outlined dropdown-icon">expand_more</span>
             </div>
 
@@ -60,7 +61,7 @@
                     <div class="control-group">
                         <div class="control-label">Freq Multiplier (x<span id="audio-mult-display">50</span>)</div>
                         <input type="range" id="audio-mult-slider" min="10" max="200" value="50" step="10">
-                        <div style="font-size: 0.65rem; color: #888; margin-top: 4px; line-height: 1.2;">
+                        <div class="control-description">
                             Multiplies simulation frequency to make it audible.
                         </div>
                     </div>
@@ -69,14 +70,14 @@
 
             <!-- Visualization (Collapsible) -->
             <div class="section-header-collapsible" data-target="visualization-wrapper">
-                <div class="section-title" style="border:none; margin:0; padding:0;">Visualization</div>
+                <div class="section-title section-title-clean">Visualization</div>
                 <span class="material-symbols-outlined dropdown-icon">expand_more</span>
             </div>
 
             <div id="visualization-wrapper" class="collapsible-content expanded">
                 <div class="collapsible-inner">
                     <!-- Ranges -->
-                    <div class="control-group" style="margin-top: 4px; margin-bottom: 12px;">
+                    <div class="control-group control-group-spaced">
                         <div class="control-label" id="display-segment-label">Displayed time (0.00s - 5.00s)</div>
                         <div class="double-slider-wrapper" id="display-segment-slider">
                             <div class="double-slider-track"></div>
@@ -89,7 +90,7 @@
                         </div>
                     </div>
 
-                    <div class="control-group" style="margin-top: 12px; margin-bottom: 12px;">
+                    <div class="control-group control-group-spaced">
                         <div class="control-label" id="freq-segment-label">Dispayed frequencies (Auto)</div>
                         <div class="double-slider-wrapper" id="freq-segment-slider">
                             <div class="double-slider-track"></div>
@@ -102,8 +103,7 @@
                     </div>
 
                     <!-- Display Toggles -->
-                    <div class="control-group"
-                        style="flex-direction: row; justify-content: space-between; align-items: center; margin-top: 8px;">
+                    <div class="control-group control-group-row">
                         <div class="control-label">Show Grid & Axis</div>
                         <label class="toggle-switch">
                             <input type="checkbox" id="axis-toggle" checked>
@@ -111,14 +111,12 @@
                         </label>
                     </div>
 
-                    <div style="margin: 12px 0 8px 0; border-top: 1px dashed var(--color-border); padding-top: 8px;">
-                        <div class="control-label"
-                            style="font-size: 0.70rem; color: #aaa; text-transform: uppercase; letter-spacing: 1px;">
+                    <div class="divider-dashed">
+                        <div class="control-label label-small">
                             Fourier Visualization</div>
                     </div>
 
-                    <div class="control-group"
-                        style="flex-direction: row; justify-content: space-between; align-items: center; margin-top: 8px;">
+                    <div class="control-group control-group-row">
                         <div class="control-label">Show real/imag components</div>
                         <label class="toggle-switch">
                             <input type="checkbox" id="reim-toggle">
@@ -126,8 +124,7 @@
                         </label>
                     </div>
 
-                    <div class="control-group"
-                        style="flex-direction: row; justify-content: space-between; align-items: center; margin-top: 8px;">
+                    <div class="control-group control-group-row">
                         <div class="control-label">Show 3D FT surface</div>
                         <label class="toggle-switch">
                             <input type="checkbox" id="surface-toggle">
@@ -136,16 +133,15 @@
                     </div>
 
                     <!-- Advanced -->
-                    <div class="control-group" style="margin-top: 12px;">
+                    <div class="control-group sec-margin-top">
                         <div class="control-label">Transform sampling (resolution)</div>
                         <input type="range" id="fft-sampling-slider" min="1" max="4" value="1" step="0.5">
-                        <div style="font-size: 0.65rem; color: #888; margin-top: 4px; line-height: 1.2;">
-                            <span style="font-size: inherit; vertical-align: middle;" class="material-symbols-outlined">warning</span> High resolution may cause performance issues.
+                        <div class="control-description">
+                            <span class="material-symbols-outlined icon-tiny">warning</span> High resolution may cause performance issues.
                         </div>
                     </div>
 
-                    <div class="control-group"
-                        style="flex-direction: row; justify-content: space-between; align-items: center; margin-top: 8px;">
+                    <div class="control-group control-group-row">
                         <div class="control-label">Transform smoothing</div>
                         <label class="toggle-switch">
                             <input type="checkbox" id="fft-smoothing-toggle">
@@ -155,30 +151,30 @@
                 </div>
             </div>
 
-            <div style="flex: 1;"></div> <!-- Spacer to push Reset down -->
+            <div class="spacer-flex"></div> <!-- Spacer to push Reset down -->
 
             <!-- About / Info (Collapsible) -->
-            <div class="section-header-collapsible" data-target="about-wrapper" style="margin-top: 20px;">
-                <div class="section-title" style="border:none; margin:0; padding:0;">About Fourier 3D</div>
-                <span class="material-symbols-outlined dropdown-icon" style="transform: rotate(-90deg);">expand_more</span>
+            <div class="section-header-collapsible sec-margin-top" data-target="about-wrapper">
+                <div class="section-title section-title-clean">About Fourier 3D</div>
+                <span class="material-symbols-outlined dropdown-icon collapsed">expand_more</span>
             </div>
 
             <div id="about-wrapper" class="collapsible-content">
                 <div class="collapsible-inner">
-                    <p style="font-size: 0.75rem; color: var(--color-text-muted); line-height: 1.6; margin: 0;">
+                    <p class="about-text">
                         <strong>Craft your signal</strong> by mixing wave components—think of them as musical notes. Use envelopes to shape how their volume evolves over time.
                         <br><br>
                         The <strong>Fourier Transform</strong> decomposes this signal, visualized as a stunning complex curve in 3D. The <strong>Magnitude Plot</strong> |F(w)| shows the strength of each frequency.
                         <br><br>
                         Check out the <strong>Winding Plot</strong> to see the math in action: your signal is wrapped around the origin at a specific frequency. The center of mass corresponds to the transform value!
                         <br><br>
-                        <strong>Vibe Coded</strong> with <span class="material-symbols-outlined" style="font-size: 10px; vertical-align: middle;">favorite</span>
+                        <strong>Vibe Coded</strong> with <span class="material-symbols-outlined icon-tiny">favorite</span>
                     </p>
                 </div>
             </div>
 
-            <div style="margin-top: 20px; border-top: 1px solid var(--color-border); padding-top: 20px;">
-                <button id="reset-btn" class="secondary" style="width: 100%;">
+            <div class="divider-solid">
+                <button id="reset-btn" class="secondary btn-full-width">
                     <span class="material-symbols-outlined">restart_alt</span> RESET APP
                 </button>
             </div>
@@ -187,7 +183,7 @@
         <!-- Main Plot Area -->
         <main class="plots-wrapper">
             <!-- Top: Original Signal -->
-            <div class="plot-container" id="signal-plot-container" style="flex: 1;">
+            <div class="plot-container plot-flex-1" id="signal-plot-container">
                 <div class="plot-label">SIGNAL (TIME DOMAIN)</div>
                 <!-- Old info overlay removed -->
                 <div class="plot-controls">
@@ -200,41 +196,37 @@
             </div>
 
             <!-- Middle: Split View -->
-            <div class="split-plot-row" style="flex: 1.5; display: flex; gap: 24px; min-height: 250px;">
+            <div class="split-plot-row plot-flex-1-5">
                 <!-- Middle Left: 3D Transform -->
-                <div class="plot-container" id="transform-3d-container" style="flex: 1;">
+                <div class="plot-container plot-flex-1" id="transform-3d-container">
                     <div class="plot-label">3D FOURIER TRANSFORM</div>
-                    <div class="plot-controls" style="top: 12px; right: 12px;">
-                        <button class="icon-btn" onclick="toggleFocusMode()" title="Toggle Focus Mode"
-                            style="width: 24px; height: 24px;">
-                            <span class="material-symbols-outlined" id="focus-icon"
-                                style="font-size: 16px;">fullscreen</span>
+                    <div class="plot-controls plot-controls-top-right">
+                        <button class="icon-btn btn-small" onclick="toggleFocusMode()" title="Toggle Focus Mode">
+                            <span class="material-symbols-outlined icon-small" id="focus-icon">fullscreen</span>
                         </button>
                     </div>
                     <button class="reset-view-btn" onclick="resetView('3d')" title="Reset 3D View">
-                        <span class="material-symbols-outlined" style="font-size: 16px;">center_focus_strong</span>
+                        <span class="material-symbols-outlined icon-small">center_focus_strong</span>
                     </button>
-                    <canvas id="transform-3d-canvas" style="cursor: grab;"></canvas>
-                    <div id="hint-3d"
-                        style="position: absolute; bottom: 8px; left: 8px; font-size: 0.65rem; color: #888; pointer-events: none; transition: opacity 0.5s;">
+                    <canvas id="transform-3d-canvas" class="cursor-grab"></canvas>
+                    <div id="hint-3d" class="hint-overlay">
                         Drag to Rotate • Ctrl+Drag to Pan • Scroll to Zoom</div>
                 </div>
 
                 <!-- Middle Right: R-I Projection -->
-                <div class="plot-container" id="ri-plot-container" style="flex: 1;">
+                <div class="plot-container plot-flex-1" id="ri-plot-container">
                     <div class="plot-label">SIGNAL WINDING & FT PROJECTION</div>
                     <button class="reset-view-btn" onclick="resetView('ri')" title="Reset R-I View">
-                        <span class="material-symbols-outlined" style="font-size: 16px;">center_focus_strong</span>
+                        <span class="material-symbols-outlined icon-small">center_focus_strong</span>
                     </button>
-                    <canvas id="ri-canvas" style="cursor: grab;"></canvas>
-                    <div id="hint-ri"
-                        style="position: absolute; bottom: 8px; left: 8px; font-size: 0.65rem; color: #888; pointer-events: none; transition: opacity 0.5s;">
+                    <canvas id="ri-canvas" class="cursor-grab"></canvas>
+                    <div id="hint-ri" class="hint-overlay">
                         Drag to Pan • Scroll to Zoom</div>
                 </div>
             </div>
 
             <!-- Bottom: Absolute Value Transform -->
-            <div class="plot-container" id="mag-plot-container" style="flex: 1;">
+            <div class="plot-container plot-flex-1" id="mag-plot-container">
                 <div class="plot-label">FT MAGNITUDE |F(w)| (FREQUENCY DOMAIN)</div>
                 <div class="plot-info-overlay" id="freq-info">Freq: 0.0 Hz</div>
                 <canvas id="abs-transform-canvas"></canvas>

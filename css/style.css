@@ -1,3 +1,20 @@
+/*
+    TABLE OF CONTENTS
+    -----------------
+    Variables
+    Reset & Global
+    Layout & Containers
+    Sidebar
+    Sidebar Controls
+    Sidebar Components
+    Plots & Visualization
+    Utilities & Helper Classes
+    Responsiveness
+*/
+
+/* ----------------------------------------------------------------------
+   Variables
+   ---------------------------------------------------------------------- */
 :root {
     /* Palette from Motus/Drawxy */
     --color-bg: #ffffff;
@@ -20,6 +37,9 @@
     --radius-md: 12px;
 }
 
+/* ----------------------------------------------------------------------
+   Reset & Global
+   ---------------------------------------------------------------------- */
 * {
     box-sizing: border-box;
     user-select: none;
@@ -52,6 +72,9 @@ body {
     background: var(--color-text-muted);
 }
 
+/* ----------------------------------------------------------------------
+   Layout & Containers
+   ---------------------------------------------------------------------- */
 .app-container {
     display: grid;
     grid-template-columns: 380px 1fr; /* Larger sidebar */
@@ -60,99 +83,23 @@ body {
 }
 
 /* Focus Mode Adjustments */
-/* Focus Mode Adjustments */
-/* Sidebar Hiding Removed */
-body.focus-mode #signal-plot-container {
-    display: none;
-}
+body.focus-mode #signal-plot-container,
 body.focus-mode #ri-plot-container {
     display: none;
 }
+
 body.focus-mode .split-plot-row {
     flex: 4 !important; /* give 3d plot more vertical space */
 }
+
 /* Ensure 3D plot takes full width when RI is hidden */
 body.focus-mode #transform-3d-container {
     flex: 1;
 }
 
-
-/* Responsive Mobile Layout */
-@media (max-width: 768px) {
-    .app-container {
-        grid-template-columns: 1fr;
-        grid-template-rows: 1fr 340px; /* Plots top, Sidebar bottom */
-        height: 100vh;
-        overflow: hidden;
-    }
-    
-    
-    /* In focus mode on mobile, hide sidebar bottom row - REMOVED */
-    /* body.focus-mode .app-container {
-         grid-template-rows: 1fr;
-    } */
-
-    .plots-wrapper {
-        order: 1; /* Top */
-        padding: 12px;
-        gap: 8px;
-        overflow-y: auto; /* Allow plots to scroll if condensed */
-    }
-    
-    .sidebar {
-        order: 2; /* Bottom */
-        border-right: none;
-        border-top: 1px solid var(--color-border);
-        padding: 16px;
-        box-shadow: 0 -4px 12px rgba(0,0,0,0.05);
-        z-index: 20;
-    }
-
-    /* Adjust plot height for mobile */
-    .plot-container {
-        /* Reduce min-height significantly to allow 3 plots to fit in ~300-400px remaining space on top */
-        min-height: 100px;
-        /* Allow shrinking */
-        flex-shrink: 1; 
-    }
-    
-    .split-plot-row {
-        flex-direction: column;
-        min-height: auto !important;
-        gap: 8px !important;
-        /* Ensure children also shrink */
-        flex: 1 1 auto; 
-    }
-    
-    /* Specific override for split children to not force tallness */
-    .split-plot-row .plot-container {
-        flex: 1 1 100px; /* Basis 100px */
-    }
-}
-
-/* Base Styles (Adjusted) */
-.component-body {
-    display: flex;
-    flex-direction: column; /* Stack controls then preview */
-    gap: 12px;
-}
-
-.component-controls {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px;
-    width: 100%;
-}
-
-.component-preview-wrapper {
-    height: 48px;
-    width: 100%;
-    flex-shrink: 0;
-    border: none;
-    background: #ffffff;
-    margin-right: 0;
-    margin-top: 4px;
-}
+/* ----------------------------------------------------------------------
+   Sidebar
+   ---------------------------------------------------------------------- */
 .sidebar {
     background-color: var(--color-bg-panel);
     border-right: 1px solid var(--color-border);
@@ -169,8 +116,6 @@ body.focus-mode #transform-3d-container {
     display: none;
 }
 
-/* Old selector block removed */
-
 /* Sidebar Collapsed State */
 body.sidebar-collapsed .app-container {
     grid-template-columns: 0px 1fr;
@@ -178,7 +123,6 @@ body.sidebar-collapsed .app-container {
 body.sidebar-collapsed .sidebar {
     display: none; 
 }
-/* Ensure plots render in full space */
 body.sidebar-collapsed .plots-wrapper {
     width: 100vw;
 }
@@ -206,6 +150,13 @@ header p {
     margin-bottom: 8px;
 }
 
+/* Clean variant used to remove default styling in specific contexts */
+.section-title-clean {
+    border: none;
+    margin: 0;
+    padding: 0;
+}
+
 .section-header-collapsible {
     display: flex;
     justify-content: space-between;
@@ -228,6 +179,10 @@ header p {
     transition: transform 0.3s;
 }
 
+.dropdown-icon.collapsed {
+    transform: rotate(-90deg);
+}
+
 .collapsible-content {
     display: none;
 }
@@ -235,7 +190,6 @@ header p {
 .collapsible-content.expanded {
     display: flex;
     flex-direction: column;
-    /* Allow overflow so shadows/etc aren't clipped */
     overflow: visible; 
 }
 
@@ -247,40 +201,92 @@ header p {
     padding-bottom: 6px; 
 }
 
-.component-preview-wrapper {
-    height: 28px;
-    width: 100%;
-    flex-shrink: 0;
-    border: none;
-    background: #ffffff;
-    margin-right: 0;
-    margin-top: 0;
-}
-
-.component-body {
+/* Sidebar Toggle Button */
+#toggle-sidebar-btn {
+    position: fixed;
+    z-index: 100;
+    width: 12px; 
+    padding: 0; 
+    height: 48px;
+    border-top-left-radius: 4px;
+    border-bottom-left-radius: 4px;
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+    background: white;
+    box-shadow: -2px 0 8px rgba(0,0,0,0.1);
+    border: 1px solid var(--color-border);
+    border-right: none; 
+    cursor: pointer;
     display: flex;
-    flex-direction: column;
-    gap: 4px;
+    justify-content: center;
+    align-items: center;
+    color: var(--color-text-muted);
+    overflow: visible; 
+    transition: none; 
+    top: 50%;
+    transform: translateY(-50%);
 }
 
-.component-controls {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px;
-    width: 100%;
+#toggle-sidebar-btn span {
+    font-size: 16px; 
+    margin-left: -2px; 
+    font-weight: bold;
 }
 
-/* Controls */
+/* When sidebar visible */
+body:not(.sidebar-collapsed) #toggle-sidebar-btn {
+    left: 380px; /* Right edge of sidebar */
+    border-radius: 0 4px 4px 0; 
+    border-left: none; 
+    border-right: 1px solid var(--color-border);
+    box-shadow: 2px 0 8px rgba(0,0,0,0.05);
+}
+
+/* When sidebar hidden */
+body.sidebar-collapsed #toggle-sidebar-btn {
+    left: 0; 
+    border-radius: 0 4px 4px 0;
+    border-left: none; 
+    border-right: 1px solid var(--color-border);
+    box-shadow: 2px 0 8px rgba(0,0,0,0.1);
+}
+
+#toggle-sidebar-btn:hover {
+    color: var(--color-accent);
+    background: #f9f9f9;
+}
+
+/* ----------------------------------------------------------------------
+   Sidebar Controls
+   ---------------------------------------------------------------------- */
 .control-group {
     display: flex;
     flex-direction: column;
     gap: 8px;
 }
 
+.control-group-spaced {
+    margin: 12px 0;
+}
+
+.control-group-row {
+    flex-direction: row; 
+    justify-content: space-between; 
+    align-items: center; 
+    margin-top: 8px;
+}
+
 .control-label {
     font-size: 0.85rem;
     font-weight: 600;
     color: var(--color-text-muted);
+}
+
+.control-description {
+    font-size: 0.65rem; 
+    color: #888; 
+    margin-top: 4px; 
+    line-height: 1.2;
 }
 
 .value-display {
@@ -312,7 +318,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
     transform: scale(1.2);
 }
 
-/* Toggle Switch (Motus Style) */
+/* Toggle Switch */
 .toggle-switch {
     position: relative;
     display: inline-block;
@@ -339,7 +345,111 @@ input[type="range"]::-webkit-slider-thumb:hover {
 input:checked + .slider { background-color: var(--color-accent); }
 input:checked + .slider:before { transform: translateX(18px); }
 
-/* Components */
+/* Double Slider Implementation */
+.double-slider-wrapper {
+    position: relative;
+    width: 100%;
+    height: 24px;
+    margin: 8px 0;
+    display: flex;
+    align-items: center;
+}
+
+.double-slider-track {
+    position: absolute;
+    left: 0;
+    width: 100%;
+    height: 6px;
+    background: #e5e7eb;
+    border-radius: 3px;
+    z-index: 0;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.double-slider-fill {
+    position: absolute;
+    height: 6px;
+    background: var(--color-accent);
+    border-radius: 3px;
+    z-index: 1;
+    pointer-events: none;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+/* Inputs (Invisible functionality) */
+input.double-slider-input {
+    position: absolute;
+    top: 0;
+    left: 0;
+    transform: none;
+    width: 100%;
+    height: 100% !important; 
+    -webkit-appearance: none;
+    appearance: none;
+    background: transparent !important; 
+    pointer-events: none; 
+    z-index: 2;
+    margin: 0;
+    padding: 0;
+    border: none;
+}
+
+/* Hide default track */
+input.double-slider-input::-webkit-slider-runnable-track,
+input.double-slider-input::-moz-range-track {
+    width: 100%;
+    height: 100%;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+}
+
+/* Thumb - Webkit */
+input.double-slider-input::-webkit-slider-thumb {
+    pointer-events: auto; 
+    -webkit-appearance: none;
+    appearance: none;
+    width: 8px !important; 
+    height: 18px !important; 
+    background: var(--color-accent) !important; 
+    border: none !important;
+    border-radius: 4px !important; 
+    cursor: col-resize;
+    box-shadow: none !important;
+    margin-top: 3px !important; /* (24px - 18px) / 2 */
+    position: relative;
+    z-index: 10;
+    transition: transform 0.1s;
+}
+
+/* Thumb - Moz */
+input.double-slider-input::-moz-range-thumb {
+    pointer-events: auto;
+    width: 8px !important; 
+    height: 18px !important; 
+    background: var(--color-accent) !important; 
+    border: none !important;
+    border-radius: 4px !important; 
+    cursor: col-resize;
+    box-shadow: none !important;
+    position: relative;
+    z-index: 10;
+    transition: transform 0.1s;
+    border: none;
+}
+
+input.double-slider-input::-webkit-slider-thumb:hover,
+input.double-slider-input::-moz-range-thumb:hover,
+.double-slider-input:hover::-moz-range-thumb  {
+    transform: scale(1.1);
+}
+
+
+/* ----------------------------------------------------------------------
+   Sidebar Components
+   ---------------------------------------------------------------------- */
 .component-row {
     background: white;
     padding: 8px 12px;
@@ -365,10 +475,17 @@ input:checked + .slider:before { transform: translateX(18px); }
     color: var(--color-text-muted);
 }
 
+.component-body {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
 .component-controls {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 12px;
+    width: 100%;
 }
 
 .component-control-item {
@@ -397,8 +514,63 @@ input:checked + .slider:before { transform: translateX(18px); }
    gap: 6px;
 }
 
+.component-preview-wrapper {
+    height: 28px;
+    width: 100%;
+    flex-shrink: 0;
+    border: none;
+    background: #ffffff;
+    margin-right: 0;
+    margin-top: 0;
+}
 
-/* No Red - Use Grey/Accent */
+.envelope-section {
+    margin-top: 12px;
+    background: transparent;
+    padding: 0 4px;
+}
+
+.envelope-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.envelope-preview {
+    width: 100%;
+    height: 48px;
+    background: transparent;
+    border-bottom: 1px solid var(--color-border);
+    margin-bottom: 12px;
+}
+
+.envelope-params {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+}
+
+.param-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+
+.param-col.span-2 {
+    grid-column: span 2;
+}
+
+.param-col input[type=range] {
+     width: 100%;
+}
+.param-label {
+    font-size: 0.6rem;
+    color: #999;
+    font-weight: 600;
+}
+
 .remove-btn {
     color: #999;
     cursor: pointer;
@@ -409,35 +581,42 @@ input:checked + .slider:before { transform: translateX(18px); }
     color: var(--color-accent); /* Blue on hover */
 }
 
-/* Buttons */
-button {
-    background-color: var(--color-bg);
-    border: 1px solid var(--color-border);
-    color: var(--color-text-main);
-    padding: 12px;
-    border-radius: 8px;
-    font-family: var(--font-mono);
-    font-weight: 700;
-    cursor: pointer;
-    transition: all 0.2s;
+/* Segmented Control */
+.segmented-control {
     display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 8px;
-    font-size: 0.8rem;
-}
-button:hover {
-    border-color: var(--color-accent);
-    color: var(--color-accent);
-    background-color: #f0f7ff;
-}
-button.secondary:hover {
-    border-color: var(--color-text-main);
-    color: var(--color-text-main);
-    background-color: #f5f5f5;
+    background: var(--color-bg-track);
+    border-radius: 8px;
+    padding: 2px;
+    border: 0px solid var(--color-border);
+    margin-bottom: 8px;
 }
 
-/* Main Plots */
+.segmented-option {
+    flex: 1;
+    text-align: center;
+    padding: 6px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--color-text-muted);
+    cursor: pointer;
+    border-radius: 6px;
+    transition: all 0.2s;
+}
+
+.segmented-option.active {
+    background: white;
+    color: var(--color-accent);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.segmented-option:hover:not(.active) {
+    background: rgba(0,0,0,0.02);
+    color: var(--color-text-main);
+}
+
+/* ----------------------------------------------------------------------
+   Plots & Visualization
+   ---------------------------------------------------------------------- */
 .plots-wrapper {
     background-color: var(--color-bg-track);
     padding: 24px;
@@ -492,223 +671,18 @@ button.secondary:hover {
     font-family: var(--font-mono);
 }
 
-
 canvas {
     width: 100%;
     height: 100%;
     display: block;
-    /* Important for touch interactions */
     touch-action: none; 
     user-select: none;
     -webkit-user-select: none;
 }
 
 #abs-transform-canvas {
-    cursor: col-resize; /* Indicate interactive area */
+    cursor: col-resize;
     touch-action: none;
-}
-/* Segmented Control (Toggle) */
-.segmented-control {
-    display: flex;
-    background: var(--color-bg-track);
-    border-radius: 8px;
-    padding: 2px;
-    border: 0px solid var(--color-border);
-    margin-bottom: 8px;
-}
-
-.segmented-option {
-    flex: 1;
-    text-align: center;
-    padding: 6px;
-    font-size: 0.75rem;
-    font-weight: 700;
-    color: var(--color-text-muted);
-    cursor: pointer;
-    border-radius: 6px;
-    transition: all 0.2s;
-}
-
-.segmented-option.active {
-    background: white;
-    color: var(--color-accent);
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-}
-
-.segmented-option:hover:not(.active) {
-    background: rgba(0,0,0,0.02);
-    color: var(--color-text-main);
-}
-
-/* Double Slider Implementation - Fixed */
-.double-slider-wrapper {
-    position: relative;
-    width: 100%;
-    height: 24px;
-    margin: 8px 0;
-    display: flex;
-    align-items: center;
-}
-
-.double-slider-track {
-    position: absolute;
-    left: 0;
-    width: 100%;
-    height: 6px;
-    background: #e5e7eb;
-    border-radius: 3px;
-    z-index: 0;
-    top: 50%;
-    transform: translateY(-50%);
-}
-
-.double-slider-fill {
-    position: absolute;
-    height: 6px;
-    background: var(--color-accent);
-    border-radius: 3px;
-    z-index: 1;
-    pointer-events: none;
-    top: 50%;
-    transform: translateY(-50%);
-}
-/* Inputs (Invisible functionality) */
-input.double-slider-input {
-    position: absolute;
-    top: 50%; 
-    left: 0;
-    transform: translateY(-50%);
-    width: 100%;
-    height: 4px !important; 
-    -webkit-appearance: none;
-    appearance: none;
-    background: transparent !important; 
-    pointer-events: none; 
-    z-index: 2;
-    margin: 0;
-    padding: 0;
-    border: none;
-}
-
-/* Hide default track */
-input.double-slider-input::-webkit-slider-runnable-track {
-    width: 100%;
-    height: 100%;
-    background: transparent;
-    border: none;
-    cursor: pointer;
-}
-
-input.double-slider-input::-moz-range-track {
-    width: 100%;
-    height: 100%;
-    background: transparent;
-    border: none;
-    cursor: pointer;
-}
-
-/* Thumb - Webkit */
-input.double-slider-input::-webkit-slider-thumb {
-    pointer-events: auto; 
-    -webkit-appearance: none;
-    appearance: none;
-    width: 8px !important; /* Vertical Notch */
-    height: 18px !important; 
-    background: var(--color-accent) !important; 
-    border: none !important;
-    border-radius: 4px !important; /* Soft Rect */
-    cursor: col-resize;
-    box-shadow: none !important;
-    margin-top: -7px !important; /* (Track 4px - Thumb 18px) / 2 */
-    position: relative;
-    z-index: 10;
-    transition: transform 0.1s;
-}
-
-input.double-slider-input::-webkit-slider-thumb:hover {
-    transform: scale(1.1);
-}
-
-/* Thumb - Moz */
-input.double-slider-input::-moz-range-thumb {
-    pointer-events: auto;
-    width: 8px !important; 
-    height: 18px !important; 
-    background: var(--color-accent) !important; 
-    border: none !important;
-    border-radius: 4px !important; /* Soft Rect */
-    cursor: col-resize;
-    box-shadow: none !important;
-    position: relative;
-    z-index: 10;
-    transition: transform 0.1s;
-}
-
-input.double-slider-input::-moz-range-thumb:hover {
-    transform: scale(1.1);
-}
-
-.double-slider-input::-moz-range-thumb {
-    pointer-events: auto;
-    width: 10px; 
-    height: 18px; 
-    background: #fff; 
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    cursor: col-resize;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
-    border: none; /* Reset */
-    border: 1px solid #ccc;
-    position: relative;
-    z-index: 10;
-}
-
-/* Envelope UI */
-.envelope-section {
-    margin-top: 12px;
-    background: transparent;
-    padding: 0 4px;
-}
-
-.envelope-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 8px;
-}
-
-.envelope-preview {
-    width: 100%;
-    height: 48px;
-    background: transparent;
-    border-bottom: 1px solid var(--color-border);
-    margin-bottom: 12px;
-}
-
-.envelope-params {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 8px;
-}
-
-.param-col {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 4px;
-}
-
-.param-col.span-2 {
-    grid-column: span 2;
-}
-
-.param-col input[type=range] {
-     width: 100%;
-}
-.param-label {
-    font-size: 0.6rem;
-    color: #999;
-    font-weight: 600;
 }
 
 /* Plot Controls Overlay */
@@ -724,24 +698,27 @@ input.double-slider-input::-moz-range-thumb:hover {
     -webkit-user-select: none;
 }
 
-/* Time Label in Controls */
+.plot-controls-top-right {
+    top: 12px;
+    right: 12px;
+}
+
 .time-label-control {
     font-size: 0.65rem;
     font-weight: 700;
-    color: var(--color-accent); /* Blue */
+    color: var(--color-accent);
     background: rgba(255,255,255,0.9);
     padding: 0 8px;
     border-radius: 4px;
     border: 1px solid var(--color-border);
     text-transform: uppercase;
-    height: 24px; /* Strictly 24px */
-    line-height: 22px; /* Center vertical */
-    box-sizing: border-box; /* Include border in height */
+    height: 24px; 
+    line-height: 22px; 
+    box-sizing: border-box; 
     display: flex;
     align-items: center;
 }
 
-/* Reset View Button - Fixed Styles */
 .reset-view-btn {
     position: absolute;
     top: 12px;
@@ -755,7 +732,7 @@ input.double-slider-input::-moz-range-thumb:hover {
     align-items: center;
     justify-content: center;
     cursor: pointer; 
-    z-index: 20; /* Ensure on top */
+    z-index: 20; 
     color: var(--color-text-muted);
     transition: all 0.2s;
     box-sizing: border-box;
@@ -763,27 +740,76 @@ input.double-slider-input::-moz-range-thumb:hover {
 }
 
 .reset-view-btn span {
-    font-size: 18px; /* Consistent icon size */
+    font-size: 18px; 
 }
 
 .reset-view-btn:hover {
     color: var(--color-accent);
-    transform: scale(1.05); /* Match other buttons */
+    transform: scale(1.05);
 }
 
 /* Adjust reset button position for 3D container */
 #transform-3d-container .reset-view-btn {
     right: 48px; /* Left of fullscreen button */
-    top: 10px;   /* Match controls top */
+    top: 12px;   /* Match controls top */
+}
+
+/* Split View Flex Container */
+.split-plot-row {
+     display: flex; 
+     gap: 24px; 
+     min-height: 250px;
+}
+
+.hint-overlay {
+    position: absolute; 
+    bottom: 8px; 
+    left: 8px; 
+    font-size: 0.65rem; 
+    color: #888; 
+    pointer-events: none; 
+    transition: opacity 0.5s;
+}
+
+/* ----------------------------------------------------------------------
+   Utilities & Helper Classes
+   ---------------------------------------------------------------------- */
+button {
+    background-color: var(--color-bg);
+    border: 1px solid var(--color-border);
+    color: var(--color-text-main);
+    padding: 12px;
+    border-radius: 8px;
+    font-family: var(--font-mono);
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.8rem;
+}
+
+button:hover {
+    border-color: var(--color-accent);
+    color: var(--color-accent);
+    background-color: #f0f7ff;
+}
+
+button.secondary:hover {
+    border-color: var(--color-text-main);
+    color: var(--color-text-main);
+    background-color: #f5f5f5;
 }
 
 .icon-btn {
     background: rgba(255, 255, 255, 0.9);
     border: 1px solid var(--color-border);
-    border-radius: 8px; /* Rounded Square now */
+    border-radius: 8px; 
     width: 24px;   
     height: 24px;  
-    box-sizing: border-box; /* Critical for matching height */
+    box-sizing: border-box; 
     padding: 0;
     display: flex;
     align-items: center;
@@ -794,70 +820,82 @@ input.double-slider-input::-moz-range-thumb:hover {
 }
 
 .icon-btn span {
-    font-size: 18px; /* Slightly smaller icon */
+    font-size: 18px; 
 }
 
-/* Sidebar Toggle Button Positioning */
-#toggle-sidebar-btn {
-    position: fixed;
-    z-index: 100;
-    width: 12px; 
-    padding: 0; 
-    height: 48px;
-    border-top-left-radius: 4px;
-    border-bottom-left-radius: 4px;
-    border-top-right-radius: 0;
-    border-bottom-right-radius: 0;
-    background: white;
-    box-shadow: -2px 0 8px rgba(0,0,0,0.1);
-    border: 1px solid var(--color-border);
-    border-right: none; 
-    cursor: pointer;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    color: var(--color-text-muted);
-    overflow: visible; 
-    transition: none; /* No Animation at all */
-    
-    top: 50%;
-    transform: translateY(-50%);
-}
-#toggle-sidebar-btn span {
-    font-size: 16px; /* Fit inside 12px */
-    margin-left: -2px; 
-    font-weight: bold;
+/* New Utilities for Inline Style Replacement */
+.divider-dashed {
+    margin: 12px 0 8px 0; 
+    border-top: 1px dashed var(--color-border); 
+    padding-top: 8px;
 }
 
-
-/* When sidebar visible */
-body:not(.sidebar-collapsed) #toggle-sidebar-btn {
-    left: 380px; /* Right edge of sidebar */
-    border-radius: 0 4px 4px 0; /* Notch pointing out */
-    border-left: none; /* Connect to sidebar */
-    border-right: 1px solid var(--color-border);
-    box-shadow: 2px 0 8px rgba(0,0,0,0.05);
+.divider-solid {
+    margin-top: 20px; 
+    border-top: 1px solid var(--color-border); 
+    padding-top: 20px;
 }
 
-/* When sidebar hidden */
-body.sidebar-collapsed #toggle-sidebar-btn {
-    left: 0; /* Attached to left screen edge */
-    border-radius: 0 4px 4px 0;
-    border-left: none; /* Connect to left edge */
-    border-right: 1px solid var(--color-border);
-    box-shadow: 2px 0 8px rgba(0,0,0,0.1);
+.label-small {
+    font-size: 0.70rem; 
+    color: #aaa; 
+    text-transform: uppercase; 
+    letter-spacing: 1px;
 }
 
-#toggle-sidebar-btn:hover {
-    color: var(--color-accent);
-    background: #f9f9f9;
+.spacer-flex {
+    flex: 1;
 }
 
+.about-text {
+    font-size: 0.75rem; 
+    color: var(--color-text-muted); 
+    line-height: 1.6; 
+    margin: 0;
+}
+
+.icon-tiny {
+    font-size: 10px !important; 
+    vertical-align: middle;
+}
+
+.icon-small {
+    font-size: 16px !important;
+}
+
+.btn-full-width {
+    width: 100%;
+}
+
+.btn-small {
+    width: 24px !important; 
+    height: 24px !important;
+}
+
+.plot-flex-1 {
+    flex: 1;
+}
+
+.plot-flex-1-5 {
+    flex: 1.5;
+}
+
+.cursor-grab {
+    cursor: grab;
+}
+
+.text-no-margin {
+    margin: 0;
+}
+
+/* ----------------------------------------------------------------------
+   Responsiveness
+   ---------------------------------------------------------------------- */
 /* Mobile Overrides */
 @media (max-width: 768px) {
     .app-container {
         grid-template-columns: 1fr;
-        grid-template-rows: 1fr 340px; /* Split rows, NOT overlapping */
+        grid-template-rows: 1fr 340px; 
         height: 100vh;
         overflow: hidden;
     }
@@ -866,31 +904,32 @@ body.sidebar-collapsed #toggle-sidebar-btn {
         order: 1; /* Top */
         grid-row: 1 / 2;
         overflow-y: auto; 
-        height: 100%; /* Fill the allocated grid cell */
-        display: block; /* Remove flex here to let normal flow handle scrolling/heights naturally */
-        padding-bottom: 40px; /* Space for scroll */
+        height: 100%; 
+        padding-bottom: 0px; 
+        /* Reset spacing */
+        padding: 12px;
+        gap: 8px;
     }
     
-    /* Force specific heights on mobile to prevent expansion */
+    /* Force specific heights on mobile */
     .plot-container {
         width: 100%;
-        height: 150px; /* Reduced further */
-        min-height: 150px;
+        min-height: 100px;
         flex: none; /* Disable flex growth */
-        margin-bottom: 12px;
+        flex-shrink: 1;
+        margin-bottom: 0px;
     }
     
     /* 3D Container specific */
     #transform-3d-container {
-        height: 180px; /* Reduced */
-        min-height: 180px;
         flex: none;
     }
     
     .split-plot-row {
-        display: block; /* Not flex on mobile */
+        flex-direction: column;
         min-height: auto !important;
-        flex: none;
+        flex: 1 1 auto;
+        gap: 8px !important;
     }
     
     .sidebar {
@@ -901,6 +940,8 @@ body.sidebar-collapsed #toggle-sidebar-btn {
         border-right: none;
         border-top: 1px solid var(--color-border);
         z-index: 20;
+        padding: 16px;
+        box-shadow: 0 -4px 12px rgba(0,0,0,0.05);
     }
 
     /* Collapsed State on Mobile */
@@ -908,24 +949,25 @@ body.sidebar-collapsed #toggle-sidebar-btn {
         grid-template-rows: 1fr 0px; 
     }
     body.sidebar-collapsed .plots-wrapper {
-        grid-row: 1 / 3; /* Take full height */
+        grid-row: 1 / 3; 
         height: 100vh;
     }
     body.sidebar-collapsed .sidebar {
         display: none; 
     }
-    /* ... toggle overrides ... */
     
-    /* Button Position - No Animation */
+    /* Button Position Overrides */
     #toggle-sidebar-btn {
-        top: auto;
-        left: 50%; 
-        width: 48px; 
+        width: 48px;
         height: 14px; 
-        transform: translateX(-50%);
+        display: flex;
+        justify-content: center;
+        align-items: center;
         border-radius: 4px 4px 0 0;
-        border: 1px solid var(--color-border);
-        border-bottom: none;
+        border-bottom: none; 
+        border-right: 1px solid var(--color-border); 
+        border-left: 1px solid var(--color-border);
+        box-shadow: 0 -2px 5px rgba(0,0,0,0.05);
         transition: none; 
     }
     
@@ -935,70 +977,18 @@ body.sidebar-collapsed #toggle-sidebar-btn {
         margin-top: -2px; 
     }
 
-    /* Visible State: Button sits ON TOP of the Sidebar Border */
-    body:not(.sidebar-collapsed) #toggle-sidebar-btn {
-        bottom: 340px; /* Exact height of sidebar row */
-        /* Chevron should point DOWN (to close) - wait, if closing means hiding, it points down? 
-           Current logic: 
-           Desktop Open: Chevron Left (to close)
-           Desktop Closed: Chevron Right (to open)
-           
-           Mobile Open: Chevron Down (to close)
-           Mobile Closed: Chevron Up (to open)
-           
-           But JS sets text content based on class.
-           Open: 'chevron_left' innerText.
-           Closed: 'chevron_right' innerText.
-           
-           We need to rotate these icons to point Up/Down.
-           'chevron_left' rotated -90 = v. Correct.
-           'chevron_right' rotated -90 = ^. Correct.
-        */
-        transform: translateX(-50%); /* Just center, no button rotation */
-    }
-    
-    /* Let's keep button unrotated layout-wise for touch target stability, 
-       and just rotate the ICON inside or the whole button if it's a 12x48 strip?
-       Yes, on desktop it's 12w x 48h.
-       On mobile we want 48w x 12h.
-    */
-    
-     /* FORCE Button Dimensions for Mobile explicitly override desktop */
-    #toggle-sidebar-btn {
-        width: 48px;
-        height: 14px; 
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        border-radius: 4px 4px 0 0;
-        border-bottom: none; 
-        border-right: 1px solid var(--color-border); /* Restore right border */
-        border-left: 1px solid var(--color-border);
-        box-shadow: 0 -2px 5px rgba(0,0,0,0.05);
-    }
-    
-    /* Icon Rotation Logic */
-    /* 
-       State: Open -> Icon is 'chevron_left'
-       We want it to look like 'expand_more' (Down).
-       chevron_left points <. Rotate -90 = v. Correct.
-       
-       State: Closed -> Icon is 'chevron_right'
-       We want it to look like 'expand_less' (Up).
-       chevron_right points >. Rotate -90 = ^. Correct.
-    */
-    
+    /* Visible State */
     body:not(.sidebar-collapsed) #toggle-sidebar-btn {
         bottom: 340px; 
         left: 50%;
-        transform: translateX(-50%); /* Just center, no button rotation */
+        transform: translateX(-50%); 
+        border-radius: 4px 4px 0 0;
     }
      body:not(.sidebar-collapsed) #toggle-sidebar-btn span {
         transform: rotate(-90deg);
-        margin-left: 0;
-        margin-top: 0;
     }
 
+    /* Collapsed State */
     body.sidebar-collapsed #toggle-sidebar-btn {
         bottom: 0px;
         left: 50%;
@@ -1010,5 +1000,9 @@ body.sidebar-collapsed #toggle-sidebar-btn {
     body.sidebar-collapsed #toggle-sidebar-btn span {
         transform: rotate(-90deg);
         margin-left: 0;
+    }
+    
+    .split-plot-row .plot-container {
+        flex: 1 1 100px;
     }
 }

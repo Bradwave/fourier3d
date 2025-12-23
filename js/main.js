@@ -301,7 +301,14 @@ function triggerHintFade(type) {
 // ... Listeners ...
 function setupListeners() {
     document.querySelectorAll('.section-header-collapsible').forEach(header => {
-        header.addEventListener('click', () => { const target = document.getElementById(header.getAttribute('data-target')); if (target) { target.classList.toggle('expanded'); const icon = header.querySelector('.dropdown-icon'); icon.style.transform = target.classList.contains('expanded') ? "rotate(0deg)" : "rotate(-90deg)"; } });
+        header.addEventListener('click', () => { 
+            const target = document.getElementById(header.getAttribute('data-target')); 
+            if (target) { 
+                target.classList.toggle('expanded'); 
+                const icon = header.querySelector('.dropdown-icon'); 
+                if(icon) icon.classList.toggle('collapsed', !target.classList.contains('expanded'));
+            } 
+        });
     });
     elements.addComponentBtn.addEventListener('click', () => { state.components.push(new SignalComponent(1, 1.0)); renderComponentsUI(); saveState(); });
     elements.resetBtn.addEventListener('click', () => { localStorage.removeItem(STORAGE_KEY); location.reload(); });
