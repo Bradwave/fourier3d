@@ -124,11 +124,11 @@ function syncGlobalControls() {
     if (state.isFocusMode) {
         document.body.classList.add('focus-mode');
         const icon = document.getElementById('focus-icon');
-        if(icon) icon.innerText = 'close_fullscreen';
+        if (icon) icon.innerText = 'close_fullscreen';
     } else {
         document.body.classList.remove('focus-mode');
         const icon = document.getElementById('focus-icon');
-        if(icon) icon.innerText = 'fullscreen';
+        if (icon) icon.innerText = 'fullscreen';
     }
 
     if (state.isSidebarCollapsed) {
@@ -136,11 +136,11 @@ function syncGlobalControls() {
     } else {
         document.body.classList.remove('sidebar-collapsed');
     }
-    
+
     const sbBtn = document.getElementById('toggle-sidebar-btn');
-    if(sbBtn) {
-         if (document.body.classList.contains('sidebar-collapsed')) sbBtn.innerHTML = '<span class="material-symbols-outlined">chevron_right</span>';
-         else sbBtn.innerHTML = '<span class="material-symbols-outlined">chevron_left</span>';
+    if (sbBtn) {
+        if (document.body.classList.contains('sidebar-collapsed')) sbBtn.innerHTML = '<span class="material-symbols-outlined">chevron_right</span>';
+        else sbBtn.innerHTML = '<span class="material-symbols-outlined">chevron_left</span>';
     }
 }
 
@@ -203,10 +203,10 @@ function loadState() {
             if (parsed.showAxis !== undefined) state.showAxis = parsed.showAxis;
             if (parsed.showReIm !== undefined) state.showReIm = parsed.showReIm;
             if (parsed.showSurface !== undefined) state.showSurface = parsed.showSurface;
-            
+
             state.fftSampling = parsed.fftSampling !== undefined ? parseFloat(parsed.fftSampling) : 2;
             state.fftSmoothing = parsed.fftSmoothing !== undefined ? !!parsed.fftSmoothing : true;
-            
+
             if (parsed.view3d) state.view3d = parsed.view3d;
             if (parsed.viewRI) state.viewRI = parsed.viewRI;
             if (parsed.viewAbs) state.viewAbs = parsed.viewAbs;
@@ -221,7 +221,7 @@ window.toggleFocusMode = () => {
     document.body.classList.toggle('focus-mode');
     state.isFocusMode = document.body.classList.contains('focus-mode');
     const icon = document.getElementById('focus-icon');
-    if(icon) icon.innerText = state.isFocusMode ? 'close_fullscreen' : 'fullscreen';
+    if (icon) icon.innerText = state.isFocusMode ? 'close_fullscreen' : 'fullscreen';
     saveState();
 };
 
@@ -233,13 +233,13 @@ window.resetView = (type) => {
         state.view3d.rotX = -0.2;
         state.view3d.rotY = 0.5;
         state.view3d.scale = 1.0;
-        state.view3d.isRotating = false; 
+        state.view3d.isRotating = false;
         state.view3d.isPanning = false;
         state.view3d.panX = 0;
         state.view3d.panY = 0;
     } else if (type === 'ri') {
         // Reset Winding Pan & Scale (Increased default zoom)
-        state.viewRI.scale = 1.8; 
+        state.viewRI.scale = 1.8;
         state.viewRI.isPanning = false;
         state.viewRI.panX = 0;
         state.viewRI.panY = 0;
@@ -248,54 +248,46 @@ window.resetView = (type) => {
     saveState();
 };
 
-window.playWithResume = () => {
-    // Wrapper to ensure context is resumed on user gesture before logic
-    if (audioCtx && audioCtx.state === 'suspended') {
-        audioCtx.resume();
-    }
-    toggleAudio('original');
-};
-
 function updateSignalSliderUI() {
     const startInput = document.getElementById('display-start-input');
     const endInput = document.getElementById('display-end-input');
-    if(startInput && endInput) {
+    if (startInput && endInput) {
         startInput.value = state.zoomStart;
         endInput.value = state.zoomEnd;
         const fill = document.getElementById('display-segment-fill');
-        if(fill) {
+        if (fill) {
             fill.style.left = (state.zoomStart / 5) * 100 + '%';
             fill.style.width = ((state.zoomEnd - state.zoomStart) / 5) * 100 + '%';
         }
         const label = document.getElementById('display-segment-label');
-        if(label) label.innerText = `Displayed time (${state.zoomStart.toFixed(2)}s - ${state.zoomEnd.toFixed(2)}s)`;
+        if (label) label.innerText = `Displayed time (${state.zoomStart.toFixed(2)}s - ${state.zoomEnd.toFixed(2)}s)`;
     }
 }
 
 function updateFreqSliderUI() {
     let maxCompFreq = 0; state.components.forEach(c => { if (c.freq > maxCompFreq) maxCompFreq = c.freq; });
     const maxLimit = Math.max(20, Math.ceil(maxCompFreq * 1.5));
-    
-    const sliderStart = document.getElementById('freq-start-input'); 
+
+    const sliderStart = document.getElementById('freq-start-input');
     const sliderEnd = document.getElementById('freq-end-input');
-    
+
     if (sliderStart && sliderEnd) {
         if (sliderStart.max != maxLimit) { sliderStart.max = maxLimit; sliderEnd.max = maxLimit; }
         // Ensure values are clamped
-        if(state.viewAbs.startFreq > maxLimit) state.viewAbs.startFreq = maxLimit;
-        if(state.viewAbs.endFreq > maxLimit && state.viewAbs.endFreq !== 0) state.viewAbs.endFreq = maxLimit;
-         
+        if (state.viewAbs.startFreq > maxLimit) state.viewAbs.startFreq = maxLimit;
+        if (state.viewAbs.endFreq > maxLimit && state.viewAbs.endFreq !== 0) state.viewAbs.endFreq = maxLimit;
+
         sliderStart.value = state.viewAbs.startFreq;
         sliderEnd.value = state.viewAbs.endFreq === 0 ? maxLimit : state.viewAbs.endFreq;
-        
+
         const fill = document.getElementById('freq-segment-fill');
         const displayEnd = state.viewAbs.endFreq === 0 ? maxLimit : state.viewAbs.endFreq;
-        if(fill) {
+        if (fill) {
             fill.style.left = (state.viewAbs.startFreq / maxLimit) * 100 + '%';
             fill.style.width = ((displayEnd - state.viewAbs.startFreq) / maxLimit) * 100 + '%';
         }
         const label = document.getElementById('freq-segment-label');
-        if(label) label.innerText = `Displayed frequencies (${state.viewAbs.startFreq.toFixed(1)}Hz - ${state.viewAbs.endFreq === 0 ? 'Auto' : state.viewAbs.endFreq.toFixed(1) + 'Hz'})`;
+        if (label) label.innerText = `Displayed frequencies (${state.viewAbs.startFreq.toFixed(1)}Hz - ${state.viewAbs.endFreq === 0 ? 'Auto' : state.viewAbs.endFreq.toFixed(1) + 'Hz'})`;
     }
 }
 
@@ -335,13 +327,13 @@ function triggerHintFade(type) {
 // ... Listeners ...
 function setupListeners() {
     document.querySelectorAll('.section-header-collapsible').forEach(header => {
-        header.addEventListener('click', () => { 
-            const target = document.getElementById(header.getAttribute('data-target')); 
-            if (target) { 
-                target.classList.toggle('expanded'); 
-                const icon = header.querySelector('.dropdown-icon'); 
-                if(icon) icon.classList.toggle('collapsed', !target.classList.contains('expanded'));
-            } 
+        header.addEventListener('click', () => {
+            const target = document.getElementById(header.getAttribute('data-target'));
+            if (target) {
+                target.classList.toggle('expanded');
+                const icon = header.querySelector('.dropdown-icon');
+                if (icon) icon.classList.toggle('collapsed', !target.classList.contains('expanded'));
+            }
         });
     });
     elements.addComponentBtn.addEventListener('click', () => {
@@ -401,39 +393,39 @@ function setupListeners() {
         const rect = absCanvas.getBoundingClientRect();
         const x = e.clientX - rect.left;
         const w = rect.width;
-        
+
         let maxCompFreq = 0;
         state.components.forEach(c => {
             if (c.freq > maxCompFreq) maxCompFreq = c.freq;
         });
         const strictMax = Math.max(20, Math.ceil(maxCompFreq * 1.5));
-        
+
         const maxDisplayFreq = state.viewAbs.endFreq > 0 ? state.viewAbs.endFreq : strictMax;
         const startF = state.viewAbs.startFreq;
-        
+
         if (state.viewAbs.isPanning) {
             const dx = e.clientX - state.lastMouse.x;
             const fRange = maxDisplayFreq - startF;
             const fShift = -(dx / w) * fRange;
-            
+
             if (state.viewAbs.endFreq === 0) {
                 state.viewAbs.endFreq = strictMax;
             }
-            
+
             let newStart = state.viewAbs.startFreq + fShift;
             let newEnd = state.viewAbs.endFreq + fShift;
-            
+
             // Pan Clamping
             if (newStart < 0) {
-                 const diff = 0 - newStart;
-                 newStart += diff;
-                 newEnd += diff;
+                const diff = 0 - newStart;
+                newStart += diff;
+                newEnd += diff;
             }
             if (newEnd > strictMax) {
                 const diff = newEnd - strictMax;
                 newStart -= diff;
                 newEnd -= diff;
-                if(newStart < 0) newStart = 0; // if range > strictMax
+                if (newStart < 0) newStart = 0; // if range > strictMax
             }
 
             state.viewAbs.startFreq = newStart;
@@ -443,7 +435,7 @@ function setupListeners() {
             saveState();
             return;
         }
-        
+
         let f = startF + (x / w) * (maxDisplayFreq - startF);
         f = Math.max(0, Math.min(f, maxDisplayFreq));
         state.selectedFrequency = f;
@@ -465,7 +457,7 @@ function setupListeners() {
     absCanvas.addEventListener('pointermove', (e) => {
         // Cursor Update
         if (e.ctrlKey) absCanvas.style.cursor = 'grab';
-        else if(state.isDraggingFreq) absCanvas.style.cursor = 'col-resize';
+        else if (state.isDraggingFreq) absCanvas.style.cursor = 'col-resize';
         else absCanvas.style.cursor = 'col-resize';
 
         if (state.isDraggingFreq || state.viewAbs.isPanning) handleFreqDrag(e);
@@ -478,30 +470,30 @@ function setupListeners() {
         absCanvas.style.cursor = 'col-resize';
         saveState();
     });
-    absCanvas.addEventListener('wheel', (e) => { 
-        if (!e.ctrlKey) return; e.preventDefault(); 
-        
+    absCanvas.addEventListener('wheel', (e) => {
+        if (!e.ctrlKey) return; e.preventDefault();
+
         let maxCompFreq = 0; state.components.forEach(c => { if (c.freq > maxCompFreq) maxCompFreq = c.freq; });
         const strictMax = Math.max(20, Math.ceil(maxCompFreq * 1.5));
-        
+
         const rect = absCanvas.getBoundingClientRect(); const x = e.clientX - rect.left; const w = rect.width;
-        
+
         // Define current view range
-        let currentEnd = state.viewAbs.endFreq > 0 ? state.viewAbs.endFreq : strictMax; 
+        let currentEnd = state.viewAbs.endFreq > 0 ? state.viewAbs.endFreq : strictMax;
         let currentStart = state.viewAbs.startFreq;
-        
+
         // If current view is somehow out of bounds, reset it first for calculation
         if (currentEnd > strictMax) currentEnd = strictMax;
-        
+
         // Calculate focus freq
-        const fFocus = currentStart + (x/w) * (currentEnd - currentStart); 
+        const fFocus = currentStart + (x / w) * (currentEnd - currentStart);
         const zoomFactor = e.deltaY > 0 ? 1.1 : 0.9;
         const newRange = (currentEnd - currentStart) * zoomFactor;
-        
+
         // New start/end
         let newStart = fFocus - (fFocus - currentStart) * zoomFactor;
         let newEnd = newStart + newRange;
-        
+
         // Clamping Logic
         if (newStart < 0) newStart = 0;
         if (newEnd > strictMax) {
@@ -509,14 +501,14 @@ function setupListeners() {
             const diff = newEnd - strictMax;
             newStart -= diff;
             newEnd = strictMax;
-            if(newStart < 0) newStart = 0;
+            if (newStart < 0) newStart = 0;
         }
-        
-        state.viewAbs.startFreq = newStart; 
+
+        state.viewAbs.startFreq = newStart;
         state.viewAbs.endFreq = newEnd;
 
         updateFreqSliderUI();
-        saveState(); 
+        saveState();
     });
 
     // Signal Plot
@@ -526,25 +518,25 @@ function setupListeners() {
         const rect = sigCanvas.getBoundingClientRect();
         const x = e.clientX - rect.left;
         const w = rect.width;
-        
-        if (state.isPanningSignal) { 
+
+        if (state.isPanningSignal) {
             const dx = e.clientX - state.lastMouse.x;
             const timeRange = state.zoomEnd - state.zoomStart;
             const tShift = -(dx / w) * timeRange;
-            
+
             state.zoomStart = Math.max(0, state.zoomStart + tShift);
             state.zoomEnd = Math.min(50, state.zoomStart + timeRange);
-            
+
             if (state.zoomStart < 0) state.zoomStart = 0;
             if (state.zoomEnd > 5.0) state.zoomEnd = 5.0;
             if (state.zoomStart > state.zoomEnd - 0.1) state.zoomStart = state.zoomEnd - 0.1;
-            
+
             updateSignalSliderUI();
             state.lastMouse = { x: e.clientX, y: e.clientY };
             saveState();
-            return; 
+            return;
         }
-        
+
         if (state.isDraggingTime) {
             let t = state.zoomStart + (x / w) * (state.zoomEnd - state.zoomStart);
             t = Math.max(state.zoomStart, Math.min(t, state.zoomEnd));
@@ -569,7 +561,7 @@ function setupListeners() {
         if (state.isDraggingTime || state.isPanningSignal) handleSignalInteract(e);
         // Cursor Class Toggle
         if (e.ctrlKey) { sigCanvas.style.cursor = 'grab'; }
-        else { sigCanvas.style.cursor = 'col-resize'; } 
+        else { sigCanvas.style.cursor = 'col-resize'; }
     });
 
     sigCanvas.addEventListener('pointerup', (e) => {
@@ -580,29 +572,29 @@ function setupListeners() {
         saveState();
     });
 
-    sigCanvas.addEventListener('wheel', (e) => { 
-        if (e.ctrlKey) { 
-            e.preventDefault(); 
+    sigCanvas.addEventListener('wheel', (e) => {
+        if (e.ctrlKey) {
+            e.preventDefault();
             const rect = sigCanvas.getBoundingClientRect();
             const x = e.clientX - rect.left;
-            const w = rect.width; 
-            const tFocus = state.zoomStart + (x/w) * (state.zoomEnd - state.zoomStart); 
-            const zoomFactor = e.deltaY > 0 ? 1.1 : 0.9; 
-            const newRange = (state.zoomEnd - state.zoomStart) * zoomFactor; 
-            state.zoomStart = Math.max(0, tFocus - (tFocus - state.zoomStart) * zoomFactor); 
-            state.zoomEnd = Math.min(5.0, state.zoomStart + newRange); 
+            const w = rect.width;
+            const tFocus = state.zoomStart + (x / w) * (state.zoomEnd - state.zoomStart);
+            const zoomFactor = e.deltaY > 0 ? 1.1 : 0.9;
+            const newRange = (state.zoomEnd - state.zoomStart) * zoomFactor;
+            state.zoomStart = Math.max(0, tFocus - (tFocus - state.zoomStart) * zoomFactor);
+            state.zoomEnd = Math.min(5.0, state.zoomStart + newRange);
             updateSignalSliderUI();
-            saveState(); 
-        } 
+            saveState();
+        }
     });
 
     // 3D & RI - Resetting hints fade
-    
+
     // -- TOUCH LOGIC --
     const handleGesture = (e, type) => {
         // We'll use a simple distance tracking state for pinch
         if (!state.touch) state.touch = { dist: 0, scale: 1, startX: 0, startY: 0 };
-        
+
         // Use standard Pointer Events for single touch drag, but watch for multiple pointers
         // Actually, simple pointer events don't handle multi-touch pinch easily without caching.
         // Let's rely on 'touch' events for pinch if needed, or upgrade pointer logic.
@@ -613,7 +605,7 @@ function setupListeners() {
     const setupPlotInteractions = (canvas, viewObj, name) => {
         let evCache = [];
         let prevDiff = -1;
-        
+
         canvas.addEventListener('pointerdown', (e) => {
             triggerHintFade(name);
             evCache.push(e);
@@ -672,7 +664,7 @@ function setupListeners() {
             } else {
                 if (viewObj.lastMid) viewObj.lastMid = null; // Reset
             }
-            
+
             if (evCache.length === 1) {
                 const dx = e.clientX - state.lastMouse.x;
                 const dy = e.clientY - state.lastMouse.y;
@@ -918,9 +910,9 @@ function fft(data, bufferLike, len) {
     // data: input array of {re, im}
     // bufferLike: optional reuse array for output
     // len: explicit length to process (avoids slicing)
-    
+
     const N = len || data.length;
-    
+
     // Check/Update Bit Reversal Table
     if (N !== fftBitRevN) {
         fftBitRevN = N;
@@ -945,36 +937,36 @@ function fft(data, bufferLike, len) {
         const rev = fftBitRev[i];
         const d = data[rev];
         if (bufferLike) {
-             output[i].re = d.re;
-             output[i].im = d.im;
+            output[i].re = d.re;
+            output[i].im = d.im;
         } else {
-             output[i] = { re: d.re, im: d.im };
+            output[i] = { re: d.re, im: d.im };
         }
     }
-    
+
     // Butterfly Ops
     for (let len = 2; len <= N; len <<= 1) {
         const half = len >> 1;
         const angleBase = -2 * Math.PI / len;
-        
+
         const wBaseRe = Math.cos(angleBase);
         const wBaseIm = Math.sin(angleBase);
-        
+
         for (let i = 0; i < N; i += len) {
             let wRe = 1;
             let wIm = 0;
             for (let j = 0; j < half; j++) {
                 const u = output[i + j];
                 const v = output[i + j + half];
-                
+
                 const tRe = wRe * v.re - wIm * v.im;
                 const tIm = wRe * v.im + wIm * v.re;
-                
+
                 v.re = u.re - tRe;
                 v.im = u.im - tIm;
                 u.re = u.re + tRe;
                 u.im = u.im + tIm;
-                
+
                 const nextWRe = wRe * wBaseRe - wIm * wBaseIm;
                 const nextWIm = wRe * wBaseIm + wIm * wBaseRe;
                 wRe = nextWRe;
@@ -988,7 +980,7 @@ function fft(data, bufferLike, len) {
 function drawSpline(ctx, pts, useSmoothing, limit) {
     const len = limit !== undefined ? limit : pts.length;
     if (len < 2) return;
-    
+
     if (!useSmoothing) {
         for (let i = 0; i < len; i++) {
             const p = pts[i];
@@ -997,7 +989,7 @@ function drawSpline(ctx, pts, useSmoothing, limit) {
         }
         return;
     }
-    
+
     ctx.moveTo(pts[0].x, pts[0].y);
     for (let i = 1; i < len - 1; i++) {
         const xc = (pts[i].x + pts[i + 1].x) / 2;
@@ -1019,12 +1011,12 @@ function drawAxis(ctx, w, h, xRange, yRange, suffixX, suffixY) {
         const t = i / 5;
         const x = t * w;
         if (x < 2 || x > w - 2) continue;
-        
+
         ctx.beginPath();
         ctx.moveTo(x, h);
         ctx.lineTo(x, h - 5);
         ctx.stroke();
-        
+
         const val = xRange[0] + t * (xRange[1] - xRange[0]);
         const text = val.toFixed(1) + (suffixX || '');
         const tw = ctx.measureText(text).width;
@@ -1036,12 +1028,12 @@ function drawAxis(ctx, w, h, xRange, yRange, suffixX, suffixY) {
         const t = i / 4;
         const y = h - t * h;
         if (y < 8 || y > h - 8) continue;
-        
+
         ctx.beginPath();
         ctx.moveTo(0, y);
         ctx.lineTo(5, y);
         ctx.stroke();
-        
+
         const val = yRange[0] + t * (yRange[1] - yRange[0]);
         const text = val.toFixed(1) + (suffixY || '');
         ctx.fillText(text, 6, y + 3);
@@ -1064,13 +1056,13 @@ function animate() {
     let safeSampling = Math.min(Math.max(1, state.fftSampling), 4);
     const multiplier = Math.pow(2, Math.floor(safeSampling) - 1);
     const N_FFT = N_Base * multiplier;
-    
+
     if (state.view3d.hasInteracted && elements.hints.view3d) elements.hints.view3d.style.opacity = 0;
     if (state.viewRI.hasInteracted && elements.hints.viewRI) elements.hints.viewRI.style.opacity = 0;
-    
+
     // Reuse complexSignal buffer
     const complexSignal = ensureObjectArray(state.buffers.complexSignal, N_FFT, () => ({ re: 0, im: 0 }));
-    
+
     for (let i = 0; i < N_Base; i++) {
         const t = i / state.sampleRate;
         // Update in-place
@@ -1081,15 +1073,15 @@ function animate() {
         complexSignal[i].re = 0;
         complexSignal[i].im = 0;
     }
-    
+
     // Use full buffer with explicit length to avoid slicing allocation
     if (!state.buffers.fftOutput) state.buffers.fftOutput = [];
-    const fftOutBuf = ensureObjectArray(state.buffers.fftOutput, N_FFT, () => ({re:0, im:0}));
-    
+    const fftOutBuf = ensureObjectArray(state.buffers.fftOutput, N_FFT, () => ({ re: 0, im: 0 }));
+
     // fftResult aliases fftBuffer
     // complexSignal is passed directly (no slice)
     let fftResult = fft(complexSignal, fftOutBuf, N_FFT);
-    
+
     // Reuse displaySignal buffer
     const displaySignal = ensureObjectArray(state.buffers.displaySignal, N_Base, () => ({ t: 0, val: 0 }));
     for (let i = 0; i < N_Base; i++) {
@@ -1106,13 +1098,13 @@ function animate() {
     const numSteps = 3000;
     const dt = 5.0 / numSteps;
     let selectedTimePoint = { re: 0, im: 0 };
-    
+
     {
         const val = getSignalValueAt(state.selectedTime);
         const angle = 2 * Math.PI * state.selectedFrequency * state.selectedTime;
         selectedTimePoint = { re: val * Math.cos(angle), im: val * Math.sin(angle) };
     }
-    
+
     for (let i = 0; i <= numSteps; i++) {
         const t = i * dt;
         const val = getSignalValueAt(t);
@@ -1122,23 +1114,23 @@ function animate() {
             im: val * Math.sin(angle)
         });
     }
-    
+
     const dF = state.sampleRate / N_FFT;
     const idx = Math.round(state.selectedFrequency / dF);
-    
+
     if (idx < fftResult.length) {
         comRe = fftResult[idx].re / (N_Base / 2);
         comIm = fftResult[idx].im / (N_Base / 2);
     }
 
     let maxCompFreq = 0; state.components.forEach(c => { if (c.freq > maxCompFreq) maxCompFreq = c.freq; });
-    
+
     // Strict 1.5x Limit calculation
     const strictMaxFreq = Math.max(20, Math.ceil(maxCompFreq * 1.5));
-    
+
     // If endFreq is 0 (auto), use the limit. If it's set, clamp it to the limit.
     const maxDisplayFreq = state.viewAbs.endFreq > 0 ? Math.min(state.viewAbs.endFreq, strictMaxFreq) : strictMaxFreq;
-    
+
     // Also clamp start freq to be safe for draw loop
     if (state.viewAbs.startFreq > strictMaxFreq) state.viewAbs.startFreq = Math.max(0, strictMaxFreq - 10);
 
@@ -1152,7 +1144,7 @@ function drawSignalPlot(ctx, data, canvas) {
     const w = canvas.width / (window.devicePixelRatio || 1);
     const h = canvas.height / (window.devicePixelRatio || 1);
     const yRange = [-2, 2];
-    
+
     if (state.showAxis) {
         drawAxis(ctx, w, h, [state.zoomStart, state.zoomEnd], yRange, ' s', '');
         const y0 = h / 2;
@@ -1163,12 +1155,12 @@ function drawSignalPlot(ctx, data, canvas) {
         ctx.lineTo(w, y0);
         ctx.stroke();
     }
-    
+
     // Use the full data array logic but optimized loop
     // Convert absolute time to x
     const timeToX = (t) => ((t - state.zoomStart) / (state.zoomEnd - state.zoomStart)) * w;
     const totalDuration = 5.0; // Fixed total duration of buffer
-    
+
     // Determine start/end indices based on zoom
     // Ensure we cover the full visibly range plus sufficient padding
     // Using simple proportional logic might miss if zooming very close.
@@ -1176,21 +1168,21 @@ function drawSignalPlot(ctx, data, canvas) {
     // Determine start/end indices based on zoom
     // Increase padding drastically (-50/+50) to catch any off-screen segments
     const sampleRate = data.length / totalDuration;
-    
+
     // Fix: Ensure we start drawing BEFORE the visible window
     // If zoomStart is 0, we want index 0 or negative padding.
     // Floating point precision might make 0.499999 so we use floor with padding.
-    
-    let startSample = Math.floor(state.zoomStart * sampleRate) - 100; 
+
+    let startSample = Math.floor(state.zoomStart * sampleRate) - 100;
     let endSample = Math.ceil(state.zoomEnd * sampleRate) + 100;
-    
+
     // Clamping limits
     startSample = Math.max(0, startSample);
     endSample = Math.min(data.length, endSample);
-    
+
     let idxStart = startSample;
     const idxEnd = endSample;
-    
+
     // Safety check: Ensure the starting point is actually off-screen to the left (x < 0)
     // to prevent any gap between y-axis and signal.
     if (idxStart > 0 && data.length > 0) {
@@ -1208,19 +1200,19 @@ function drawSignalPlot(ctx, data, canvas) {
         ctx.lineWidth = 1.5;
         const yScale = h / 4;
         const yCenter = h / 2;
-        
+
         let first = true;
-        for(let i=idxStart; i<idxEnd; i++) {
+        for (let i = idxStart; i < idxEnd; i++) {
             const pt = data[i];
-            const t = pt.t; 
+            const t = pt.t;
             const x = timeToX(t);
             const y = yCenter - pt.val * yScale;
-            
-            if (first) { 
-                ctx.moveTo(x, y); 
-                first = false; 
-            } else { 
-                ctx.lineTo(x, y); 
+
+            if (first) {
+                ctx.moveTo(x, y);
+                first = false;
+            } else {
+                ctx.lineTo(x, y);
             }
         }
         ctx.stroke();
@@ -1238,9 +1230,9 @@ function drawSignalPlot(ctx, data, canvas) {
             ctx.stroke();
         }
     }
-    
+
     const tX = timeToX(state.selectedTime);
-    if (tX >= -2 && tX <= w + 2) { 
+    if (tX >= -2 && tX <= w + 2) {
         ctx.beginPath();
         ctx.moveTo(tX, 0);
         ctx.lineTo(tX, h);
@@ -1248,31 +1240,31 @@ function drawSignalPlot(ctx, data, canvas) {
         ctx.lineWidth = 1;
         ctx.setLineDash([5, 5]);
         ctx.stroke();
-        
-        ctx.setLineDash([]); 
+
+        ctx.setLineDash([]);
         const val = getSignalValueAt(state.selectedTime);
-        const y = h/2 - val * (h/4); 
+        const y = h / 2 - val * (h / 4);
         ctx.beginPath();
         ctx.fillStyle = '#1484e6';
         ctx.arc(tX, y, 4, 0, Math.PI * 2);
-        ctx.fill(); 
+        ctx.fill();
     }
 }
 
 function project3D(x, y, z, cx, cy, scale) {
     cx += state.view3d.panX;
     cy += state.view3d.panY;
-    
+
     const cosX = Math.cos(state.view3d.rotX);
     const sinX = Math.sin(state.view3d.rotX);
     const cosY = Math.cos(state.view3d.rotY);
     const sinY = Math.sin(state.view3d.rotY);
-    
+
     let y1 = y * cosX - z * sinX;
     let z1 = y * sinX + z * cosX;
     let x2 = x * cosY + z1 * sinY;
     let z2 = -x * sinY + z1 * cosY;
-    
+
     const s = scale * state.view3d.scale;
     return {
         x: cx + x2 * s,
@@ -1287,7 +1279,7 @@ function draw3DPlot(ctx, fft, canvas, maxFreq, N_FFT) {
     const cy = h / 2;
     const scale = Math.min(w, h) * 0.4;
     const xLen = 1.1;
-    
+
     const corners = [
         [0, 1, 1],
         [0, 1, -1],
@@ -1302,10 +1294,10 @@ function draw3DPlot(ctx, fft, canvas, maxFreq, N_FFT) {
     ctx.beginPath();
     ctx.lineWidth = 0.5;
     ctx.strokeStyle = '#e0e0e0';
-    
+
     [
-        [0, 1], [0, 2], [1, 3], [2, 3], 
-        [4, 5], [4, 6], [5, 7], [6, 7], 
+        [0, 1], [0, 2], [1, 3], [2, 3],
+        [4, 5], [4, 6], [5, 7], [6, 7],
         [0, 4], [1, 5], [2, 6], [3, 7]
     ].forEach(l => {
         ctx.moveTo(corners[l[0]].x, corners[l[0]].y);
@@ -1317,7 +1309,7 @@ function draw3DPlot(ctx, fft, canvas, maxFreq, N_FFT) {
     const xAxis = project3D(1.2, 0, 0, cx, cy, scale);
     const yTop = project3D(0, 1.1, 0, cx, cy, scale);
     const zTop = project3D(0, 0, 1.1, cx, cy, scale);
-    
+
     ctx.lineWidth = 1;
     ctx.strokeStyle = '#ccc';
     ctx.beginPath();
@@ -1328,32 +1320,32 @@ function draw3DPlot(ctx, fft, canvas, maxFreq, N_FFT) {
     ctx.moveTo(origin.x, origin.y);
     ctx.lineTo(zTop.x, zTop.y);
     ctx.stroke();
-    
+
     ctx.fillStyle = '#888';
     ctx.font = '10px monospace';
     ctx.fillText(state.showAxis ? 'Freq [Hz]' : 'Freq', xAxis.x, xAxis.y);
     ctx.fillText('Re', yTop.x, yTop.y);
     ctx.fillText('Im', zTop.x, zTop.y);
-    if (state.showAxis) { 
+    if (state.showAxis) {
         // Draw multiple notches along Frequency Axis
         const numNotches = 5;
-        ctx.fillStyle = '#888'; 
+        ctx.fillStyle = '#888';
         ctx.font = '9px monospace';
         for (let i = 1; i <= numNotches; i++) {
-             const t = i / numNotches; 
-             const freqVal = t * maxFreq;
-             const p = project3D(t, 0, 0, cx, cy, scale);
-             
-             // Tick
-             ctx.beginPath();
-             ctx.moveTo(p.x, p.y - 2);
-             ctx.lineTo(p.x, p.y + 2);
-             ctx.stroke();
-             
-             // Label
-             const txt = freqVal.toFixed(0);
-             const tw = ctx.measureText(txt).width;
-             ctx.fillText(txt, p.x - tw/2, p.y + 12);
+            const t = i / numNotches;
+            const freqVal = t * maxFreq;
+            const p = project3D(t, 0, 0, cx, cy, scale);
+
+            // Tick
+            ctx.beginPath();
+            ctx.moveTo(p.x, p.y - 2);
+            ctx.lineTo(p.x, p.y + 2);
+            ctx.stroke();
+
+            // Label
+            const txt = freqVal.toFixed(0);
+            const tw = ctx.measureText(txt).width;
+            ctx.fillText(txt, p.x - tw / 2, p.y + 12);
         }
     }
     const dF = state.sampleRate / N_FFT; const maxK = Math.min(Math.ceil(maxFreq / dF), fft.length); const N_Base = (2048);
@@ -1366,60 +1358,60 @@ function draw3DPlot(ctx, fft, canvas, maxFreq, N_FFT) {
         pImag.push(project3D(x, 0, im, cx, cy, scale));
         if (state.showReIm) { pRealWall.push(project3D(x, re, -1, cx, cy, scale)); pImagWall.push(project3D(x, -1, im, cx, cy, scale)); }
     }
-    
+
     // Draw Surface (Revolution of Magnitude)
     // Draw Surface (Revolution of Magnitude)
     if (state.showSurface) {
-         // MORE OPAQUE
-         ctx.fillStyle = 'rgba(135, 206, 250, 0.4)'; 
-         ctx.strokeStyle = 'rgba(135, 206, 250, 0.1)';
-         
-         // Increase resolution significantly if smoothed
-         const density = state.fftSmoothing ? 200 : 70;
-         const step = Math.max(1, Math.floor(maxK / density)); 
-         const segments = 24; 
-         
-         let prevRing = null;
-         
-         // Iterate to form rings and connect them
-         for (let k = 0; k <= maxK; k += step) {
-             const idx = Math.min(k, fft.length - 1);
-             const fVal = (idx * dF); 
-             const x = fVal / maxFreq; 
-             const scaleFactor = (N_Base / 2); 
-             const re = fft[idx].re / scaleFactor; 
-             const im = fft[idx].im / scaleFactor;
-             const mag = Math.hypot(re, im);
-             
-             // Calculate Ring Points
-             const currRing = [];
-             for(let j=0; j<=segments; j++) {
-                 const theta = (j/segments) * Math.PI * 2;
-                 const dy = mag * Math.cos(theta);
-                 const dz = mag * Math.sin(theta);
-                 currRing.push(project3D(x, dy, dz, cx, cy, scale));
-             }
-             
-             // Connect to previous ring
-             if (prevRing) {
-                  for(let j=0; j<segments; j++) {
-                      ctx.beginPath();
-                      ctx.moveTo(prevRing[j].x, prevRing[j].y);
-                      ctx.lineTo(prevRing[j+1].x, prevRing[j+1].y);
-                      ctx.lineTo(currRing[j+1].x, currRing[j+1].y);
-                      ctx.lineTo(currRing[j].x, currRing[j].y);
-                      ctx.closePath();
-                      ctx.fill();
-                      ctx.stroke(); 
-                  }
-             }
-             prevRing = currRing;
-             
-             // Break effectively if we hit end
-             if (k >= maxK || idx >= fft.length - 1) break;
-         }
+        // MORE OPAQUE
+        ctx.fillStyle = 'rgba(135, 206, 250, 0.4)';
+        ctx.strokeStyle = 'rgba(135, 206, 250, 0.1)';
+
+        // Increase resolution significantly if smoothed
+        const density = state.fftSmoothing ? 200 : 70;
+        const step = Math.max(1, Math.floor(maxK / density));
+        const segments = 24;
+
+        let prevRing = null;
+
+        // Iterate to form rings and connect them
+        for (let k = 0; k <= maxK; k += step) {
+            const idx = Math.min(k, fft.length - 1);
+            const fVal = (idx * dF);
+            const x = fVal / maxFreq;
+            const scaleFactor = (N_Base / 2);
+            const re = fft[idx].re / scaleFactor;
+            const im = fft[idx].im / scaleFactor;
+            const mag = Math.hypot(re, im);
+
+            // Calculate Ring Points
+            const currRing = [];
+            for (let j = 0; j <= segments; j++) {
+                const theta = (j / segments) * Math.PI * 2;
+                const dy = mag * Math.cos(theta);
+                const dz = mag * Math.sin(theta);
+                currRing.push(project3D(x, dy, dz, cx, cy, scale));
+            }
+
+            // Connect to previous ring
+            if (prevRing) {
+                for (let j = 0; j < segments; j++) {
+                    ctx.beginPath();
+                    ctx.moveTo(prevRing[j].x, prevRing[j].y);
+                    ctx.lineTo(prevRing[j + 1].x, prevRing[j + 1].y);
+                    ctx.lineTo(currRing[j + 1].x, currRing[j + 1].y);
+                    ctx.lineTo(currRing[j].x, currRing[j].y);
+                    ctx.closePath();
+                    ctx.fill();
+                    ctx.stroke();
+                }
+            }
+            prevRing = currRing;
+
+            // Break effectively if we hit end
+            if (k >= maxK || idx >= fft.length - 1) break;
+        }
     }
-    
+
     ctx.lineWidth = 1;
     // Central projections: Keep somewhat visible
     ctx.strokeStyle = 'rgba(20, 132, 230, 0.3)'; ctx.beginPath(); drawSpline(ctx, pReal, state.fftSmoothing); ctx.stroke();
@@ -1436,28 +1428,29 @@ function draw3DPlot(ctx, fft, canvas, maxFreq, N_FFT) {
         const clReal = pReal[seekIdx]; const clImag = pImag[seekIdx];
         ctx.beginPath(); ctx.strokeStyle = 'rgba(20, 132, 230, 0.4)'; ctx.setLineDash([2, 2]);
         ctx.moveTo(closest.x, closest.y); ctx.lineTo(clReal.x, clReal.y); ctx.moveTo(closest.x, closest.y); ctx.lineTo(clImag.x, clImag.y);
-        if (state.showReIm && pRealWall.length > seekIdx) { 
-            const clRealWall = pRealWall[seekIdx]; 
-            const clImagWall = pImagWall[seekIdx]; 
-            ctx.moveTo(clReal.x, clReal.y); ctx.lineTo(clRealWall.x, clRealWall.y); 
+        if (state.showReIm && pRealWall.length > seekIdx) {
+            const clRealWall = pRealWall[seekIdx];
+            const clImagWall = pImagWall[seekIdx];
+            ctx.moveTo(clReal.x, clReal.y); ctx.lineTo(clRealWall.x, clRealWall.y);
             ctx.moveTo(clImag.x, clImag.y); ctx.lineTo(clImagWall.x, clImagWall.y);
-            
+
             // Draw small dots on wall using same stroke color but full opacity or standard color
             // Use same color as projection lines but solid
             // Real Wall Point
             ctx.stroke(); ctx.beginPath(); ctx.fillStyle = 'rgba(20, 132, 230, 0.8)';
             ctx.arc(clRealWall.x, clRealWall.y, 2.5, 0, Math.PI * 2); ctx.fill();
-            
+
             // Imag Wall Point
             ctx.beginPath(); ctx.fillStyle = 'rgba(100, 100, 100, 0.8)';
             ctx.arc(clImagWall.x, clImagWall.y, 2.5, 0, Math.PI * 2); ctx.fill();
-            
+
             // Resume dash connection
             ctx.beginPath(); ctx.setLineDash([2, 2]); ctx.strokeStyle = 'rgba(20, 132, 230, 0.4)';
         }
         ctx.stroke(); ctx.setLineDash([]);
     }
 }
+
 function drawRIPlot(ctx, windingPoints, comRe, comIm, canvas, fft, maxFreq, N_FFT, timePoint) {
     const w = canvas.width / (window.devicePixelRatio || 1);
     const h = canvas.height / (window.devicePixelRatio || 1);
@@ -1465,7 +1458,7 @@ function drawRIPlot(ctx, windingPoints, comRe, comIm, canvas, fft, maxFreq, N_FF
     const cy = h / 2 + state.viewRI.panY;
     const baseScale = Math.min(w, h) * 0.35;
     const scale = baseScale * state.viewRI.scale;
-    
+
     if (state.showAxis) {
         ctx.beginPath();
         ctx.strokeStyle = '#eee';
@@ -1475,19 +1468,19 @@ function drawRIPlot(ctx, windingPoints, comRe, comIm, canvas, fft, maxFreq, N_FF
         ctx.lineTo(w, cy);
         ctx.stroke();
     }
-    
+
     const displayScale = scale * 0.5;
     const mappedWinding = windingPoints.map(p => ({
         x: cx + p.re * displayScale,
         y: cy - p.im * displayScale
     }));
-    
+
     ctx.beginPath();
     ctx.strokeStyle = 'rgba(20, 132, 230, 0.8)';
     ctx.lineWidth = 1.5;
     drawSpline(ctx, mappedWinding, state.fftSmoothing);
     ctx.stroke();
-    
+
     if (timePoint) {
         const tx = cx + timePoint.re * displayScale;
         const ty = cy - timePoint.im * displayScale;
@@ -1496,13 +1489,13 @@ function drawRIPlot(ctx, windingPoints, comRe, comIm, canvas, fft, maxFreq, N_FF
         ctx.arc(tx, ty, 4, 0, Math.PI * 2);
         ctx.fill();
     }
-    
+
     const dF = state.sampleRate / N_FFT;
     const maxK = (state.selectedFrequency / dF);
     const N_Base = 2048;
     const scaleFactor = (N_Base / 2);
     const comPts = [];
-    
+
     for (let k = 0; k <= Math.ceil(maxK); k++) {
         if (k >= fft.length / 2) break;
         const re = fft[k].re / scaleFactor;
@@ -1512,7 +1505,7 @@ function drawRIPlot(ctx, windingPoints, comRe, comIm, canvas, fft, maxFreq, N_FF
             y: cy - im * displayScale
         });
     }
-    
+
     ctx.beginPath();
     ctx.strokeStyle = '#888';
     ctx.lineWidth = 1.5;
@@ -1520,9 +1513,10 @@ function drawRIPlot(ctx, windingPoints, comRe, comIm, canvas, fft, maxFreq, N_FF
     drawSpline(ctx, comPts, state.fftSmoothing);
     ctx.stroke();
     ctx.setLineDash([]);
-    
+
     const comX = cx + comRe * displayScale;
     const comY = cy - comIm * displayScale;
+
     ctx.beginPath();
     ctx.fillStyle = '#000000';
     ctx.arc(comX, comY, 5, 0, Math.PI * 2);
@@ -1533,30 +1527,31 @@ function drawRIPlot(ctx, windingPoints, comRe, comIm, canvas, fft, maxFreq, N_FF
     ctx.lineTo(comX, comY);
     ctx.stroke();
 }
+
 function drawAbsTransform(ctx, fft, canvas, maxFreq, N_FFT) {
     const w = canvas.width / (window.devicePixelRatio || 1);
     const h = canvas.height / (window.devicePixelRatio || 1);
     const startF = state.viewAbs.startFreq;
     const endF = state.viewAbs.endFreq > 0 ? state.viewAbs.endFreq : maxFreq;
     const freqRange = endF - startF;
-    
+
     let yZero = h;
     let yScale = h * 0.8;
-    
-    if (state.showReIm) { 
-        yZero = h / 2; 
-        yScale = (h / 2) * 0.8; 
-        if (state.showAxis) drawAxis(ctx, w, h, [startF, endF], [-1, 1], ' Hz', ''); 
-    } else { 
+
+    if (state.showReIm) {
+        yZero = h / 2;
+        yScale = (h / 2) * 0.8;
+        if (state.showAxis) drawAxis(ctx, w, h, [startF, endF], [-1, 1], ' Hz', '');
+    } else {
         // Shift axis to start below 0 so the curve isn't cut off
         const yMin = -0.15;
         const yMax = 1.6;
         const ySpan = yMax - yMin;
         yScale = h / ySpan;
         yZero = h + ((yMin) / ySpan) * h; // y position for value 0
-        if (state.showAxis) drawAxis(ctx, w, h, [startF, endF], [yMin, yMax], ' Hz', ''); 
+        if (state.showAxis) drawAxis(ctx, w, h, [startF, endF], [yMin, yMax], ' Hz', '');
     }
-    
+
     if (state.showReIm) {
         ctx.beginPath();
         ctx.strokeStyle = '#eee';
@@ -1564,7 +1559,7 @@ function drawAbsTransform(ctx, fft, canvas, maxFreq, N_FFT) {
         ctx.lineTo(w, yZero);
         ctx.stroke();
     }
-    
+
     // Guard against infinite/nan X
     if (freqRange <= 0.0001) return;
 
@@ -1573,19 +1568,19 @@ function drawAbsTransform(ctx, fft, canvas, maxFreq, N_FFT) {
         const maxK = Math.min(Math.ceil(endF / dF), fft.length);
         const startK = Math.floor(startF / dF);
         const N_Base = 2048;
-        
+
         ctx.lineWidth = 1.5;
         const pts = [];
         const ptsRe = [];
         const ptsIm = [];
-        
+
         for (let k = startK; k < maxK; k++) {
             const mag = Math.sqrt(fft[k].re ** 2 + fft[k].im ** 2);
             const f = k * dF;
             const x = ((f - startF) / freqRange) * w;
-            
+
             pts.push({ x, y: yZero - (mag / (N_Base / 2)) * yScale });
-            
+
             if (state.showReIm) {
                 ptsRe.push({ x, y: yZero - (fft[k].re / (N_Base / 2)) * yScale });
                 ptsIm.push({ x, y: yZero - (fft[k].im / (N_Base / 2)) * yScale });
@@ -1597,7 +1592,7 @@ function drawAbsTransform(ctx, fft, canvas, maxFreq, N_FFT) {
             ctx.strokeStyle = 'rgba(20, 132, 230, 0.4)';
             drawSpline(ctx, ptsRe, state.fftSmoothing);
             ctx.stroke();
-            
+
             ctx.beginPath();
             ctx.strokeStyle = 'rgba(100, 100, 100, 0.4)';
             drawSpline(ctx, ptsIm, state.fftSmoothing);
@@ -1622,12 +1617,12 @@ function drawAbsTransform(ctx, fft, canvas, maxFreq, N_FFT) {
             ctx.lineTo(selX, h);
             ctx.stroke();
             ctx.setLineDash([]);
-            
+
             const idx = Math.round(state.selectedFrequency / dF);
             const ptIdx = idx - startK;
             let closestY = yZero;
             if (ptIdx >= 0 && ptIdx < pts.length) closestY = pts[ptIdx].y;
-            
+
             ctx.beginPath();
             ctx.fillStyle = '#1484e6';
             ctx.arc(selX, closestY, 4, 0, Math.PI * 2);
@@ -1635,85 +1630,104 @@ function drawAbsTransform(ctx, fft, canvas, maxFreq, N_FFT) {
         }
     }
 }
+
 // Audio State
 let currentSource = null;
 
-// Ensure AudioContext is singleton and resumed
-window.getAudioContext = () => {
+window.toggleAudio = () => {
     if (!audioCtx) {
         audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     }
+
     if (audioCtx.state === 'suspended') {
         audioCtx.resume();
     }
-    return audioCtx;
-};
 
-window.toggleAudio = (type) => { 
-    const ctx = window.getAudioContext();
-    
-    // Check if we are currently playing the same type
-    if (isPlaying === type) {
-        if (currentSource) {
-            try { currentSource.stop(); } catch(e){}
-            currentSource = null;
-        }
-        isPlaying = null;
-    } else {
-        // If playing something else, stop it first
-        if (isPlaying && currentSource) {
-            try { currentSource.stop(); } catch(e){}
-            currentSource = null;
-        }
-        
-        isPlaying = type; // Set new type
-        
-        // Generate Buffer at Audio Sample Rate (Real Sound Rendering)
-        const duration = 5.0; // Fixed 5s
-        const sampleRate = audioCtx.sampleRate;
-        const totalSamples = sampleRate * duration;
-        const buffer = audioCtx.createBuffer(1, totalSamples, sampleRate);
-        const c = buffer.getChannelData(0); 
-        
-        // Calculate signal sample by sample for high fidelity
-        for (let i = 0; i < totalSamples; i++) {
-            const t = i / sampleRate;
-            // Use existing logic which handles components, envelopes, time constraints
-            const val = getSignalValueAt(t);
-            // Clipping protection?
-            c[i] = Math.max(-1, Math.min(1, val)); 
-        }
-        
-        currentSource = audioCtx.createBufferSource(); 
-        currentSource.buffer = buffer; 
-        currentSource.connect(audioCtx.destination); 
-        currentSource.loop = true; 
-        
-        // Sync playback visual to audio time
-        audioStartTime = audioCtx.currentTime;
-        
-        // Ensure context is running (mobile/browser policy)
-        if (audioCtx.state === 'suspended') {
-            audioCtx.resume().then(() => {
-                currentSource.start();
-            });
-        } else {
-            currentSource.start();
-        }
+    // Stop if currently playing
+    if (isPlaying) {
+        stopAudio();
+        return;
     }
-    updatePlayButtonUI();
+
+    // Start New
+    isPlaying = true;
+    updatePlayButtons();
+
+    const buffer = generateAudioBuffer();
+
+    currentSource = audioCtx.createBufferSource();
+    currentSource.buffer = buffer;
+    currentSource.connect(audioCtx.destination);
+
+    // Set Start Time
+    audioStartTime = audioCtx.currentTime;
+
+    currentSource.onended = () => {
+        // Only if we are still the registered player
+        if (isPlaying) {
+            isPlaying = false;
+            updatePlayButtons();
+        }
+    };
+    currentSource.start();
 };
 
-function updatePlayButtonUI() {
-    const btn = document.getElementById('btn-play-original');
-    if (!btn) return;
-    
-    if (isPlaying === 'original') {
-        btn.classList.add('playing');
-        btn.innerHTML = '<span class="material-symbols-outlined">stop</span>';
-    } else {
-        btn.classList.remove('playing');
-        btn.innerHTML = '<span class="material-symbols-outlined">play_arrow</span>';
+function stopAudio() {
+    if (currentSource) {
+        try { currentSource.stop(); } catch (e) { }
+        currentSource = null;
+    }
+    isPlaying = false;
+    updatePlayButtons();
+}
+
+function updatePlayButtons() {
+    const signalPlayStop = document.getElementById('btn-play-signal');
+
+    if (signalPlayStop) {
+        if (isPlaying) {
+            signalPlayStop.classList.add('playing');
+            const s = signalPlayStop.querySelector('span');
+            if (s) s.innerText = 'stop';
+        } else {
+            signalPlayStop.classList.remove('playing');
+            const s = signalPlayStop.querySelector('span');
+            if (s) s.innerText = 'play_arrow';
+        }
     }
 }
+
+function generateAudioBuffer() {
+    const duration = 5.0; // Fixed duration
+    const sr = audioCtx.sampleRate;
+    const totalSamples = sr * duration;
+    const buffer = audioCtx.createBuffer(1, totalSamples, sr);
+    const data = buffer.getChannelData(0);
+
+    const K = state.audioMultiplier;
+
+    for (let i = 0; i < totalSamples; i++) {
+        const t = i / sr; // Audio Time
+        let val = 0;
+        state.components.forEach(comp => {
+            let compVal = comp.amp * Math.cos(2 * Math.PI * (comp.freq * K) * t);
+
+            // Apply envelope (Always 'real' mode effectively in this app logic)
+            if (t < comp.startTime || t > comp.endTime) {
+                compVal = 0;
+            } else {
+                const dur = comp.endTime - comp.startTime;
+                if (dur > 0.01) {
+                    const tNorm = (t - comp.startTime) / dur;
+                    compVal *= getEnvelopeValue(tNorm, comp.envelopeType, comp.envelopeParams);
+                }
+            }
+            val += compVal;
+        });
+        data[i] = Math.tanh(val * 0.5);
+    }
+
+    return buffer;
+}
+
 init();

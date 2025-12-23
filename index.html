@@ -13,8 +13,6 @@
     <link rel="stylesheet"
         href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
     <link rel="stylesheet" href="css/style.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.8.0/math.min.js"></script>
-    <!-- Optional but might be useful, though strict JS is fine -->
 </head>
 
 <body>
@@ -90,7 +88,7 @@
                     </div>
 
                     <div class="control-group control-group-spaced">
-                        <div class="control-label" id="freq-segment-label">Dispayed frequencies (Auto)</div>
+                        <div class="control-label" id="freq-segment-label">Displayed frequencies (Auto)</div>
                         <div class="double-slider-wrapper" id="freq-segment-slider">
                             <div class="double-slider-track"></div>
                             <div class="double-slider-fill" id="freq-segment-fill" style="left: 0%; width: 100%;"></div>
@@ -187,7 +185,7 @@
                 <!-- Old info overlay removed -->
                 <div class="plot-controls">
                     <div class="time-label-control" id="time-info">Time: 0.50s</div>
-                    <button class="icon-btn" onclick="playWithResume()" id="btn-play-original" title="Play Original">
+                    <button class="icon-btn" onclick="toggleAudio()" id="btn-play-signal" title="Play signal">
                         <span class="material-symbols-outlined">play_arrow</span>
                     </button>
                 </div>
@@ -200,7 +198,7 @@
                 <div class="plot-container plot-flex-1" id="transform-3d-container">
                     <div class="plot-label">3D FOURIER TRANSFORM</div>
                     <div class="plot-controls plot-controls-top-right">
-                        <button class="icon-btn btn-small" onclick="toggleFocusMode()" title="Toggle Focus Mode">
+                        <button class="icon-btn btn-small" onclick="toggleFocusMode()" title="Toggle focus mode">
                             <span class="material-symbols-outlined icon-small" id="focus-icon">fullscreen</span>
                         </button>
                     </div>
