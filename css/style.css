@@ -204,27 +204,27 @@ header p {
 /* Sidebar Toggle Button */
 #toggle-sidebar-btn {
     position: fixed;
+    left: 380px; /* Default sidebar width */
+    top: 50%;
+    transform: translateY(-50%);
     z-index: 100;
     width: 12px; 
     padding: 0; 
     height: 48px;
-    border-top-left-radius: 4px;
-    border-bottom-left-radius: 4px;
-    border-top-right-radius: 0;
-    border-bottom-right-radius: 0;
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+    border-top-right-radius: 4px;
+    border-bottom-right-radius: 4px;
     background: white;
-    box-shadow: -2px 0 8px rgba(0,0,0,0.1);
+    box-shadow: 2px 0 8px rgba(0,0,0,0.05);
     border: 1px solid var(--color-border);
-    border-right: none; 
+    border-left: none; 
     cursor: pointer;
     display: flex;
     justify-content: center;
     align-items: center;
     color: var(--color-text-muted);
-    overflow: visible; 
-    transition: none; 
-    top: 50%;
-    transform: translateY(-50%);
+    transition: all 0s;
 }
 
 #toggle-sidebar-btn span {
@@ -233,16 +233,7 @@ header p {
     font-weight: bold;
 }
 
-/* When sidebar visible */
-body:not(.sidebar-collapsed) #toggle-sidebar-btn {
-    left: 380px; /* Right edge of sidebar */
-    border-radius: 0 4px 4px 0; 
-    border-left: none; 
-    border-right: 1px solid var(--color-border);
-    box-shadow: 2px 0 8px rgba(0,0,0,0.05);
-}
-
-/* When sidebar hidden */
+/* When sidebar hidden (Desktop) */
 body.sidebar-collapsed #toggle-sidebar-btn {
     left: 0; 
     border-radius: 0 4px 4px 0;
@@ -884,6 +875,13 @@ button.secondary:hover {
     cursor: grab;
 }
 
+.hint-mobile {
+    display: none;
+}
+.hint-desktop {
+    display: inline;
+}
+
 .text-no-margin {
     margin: 0;
 }
@@ -894,115 +892,143 @@ button.secondary:hover {
 /* Mobile Overrides */
 @media (max-width: 768px) {
     .app-container {
-        grid-template-columns: 1fr;
-        grid-template-rows: 1fr 340px; 
+        display: flex;
+        flex-direction: column;
+        grid-template-columns: none;
+        grid-template-rows: none;
         height: 100vh;
         overflow: hidden;
     }
     
     .plots-wrapper {
-        order: 1; /* Top */
-        grid-row: 1 / 2;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        padding: 4px;
+        gap: 4px;
         overflow-y: auto; 
-        height: 100%; 
-        padding-bottom: 0px; 
-        /* Reset spacing */
-        padding: 12px;
-        gap: 8px;
+        height: auto;
     }
     
-    /* Force specific heights on mobile */
-    .plot-container {
-        width: 100%;
-        min-height: 100px;
-        flex: none; /* Disable flex growth */
-        flex-shrink: 1;
-        margin-bottom: 0px;
-    }
-    
-    /* 3D Container specific */
-    #transform-3d-container {
-        flex: none;
+    /* Plot Sizing Ratios */
+    #signal-plot-container {
+        flex: 1;
+        min-height: 80px;
     }
     
     .split-plot-row {
-        flex-direction: column;
-        min-height: auto !important;
-        flex: 1 1 auto;
-        gap: 8px !important;
+        flex: 3; /* More height for 3D/Winding */
+        min-height: 150px;
+        display: flex;
+        flex-direction: row;
+        gap: 4px !important;
     }
     
-    .sidebar {
-        order: 2; /* Bottom */
-        grid-row: 2 / 3;
+    .split-plot-row .plot-container {
+        flex: 1; /* Side by side */
+    }
+    
+    #mag-plot-container {
+        flex: 1;
+        min-height: 80px;
+    }
+
+    /* Force specific heights on mobile override */
+    .plot-container {
+        margin-bottom: 0px;
         width: 100%;
-        height: 100%; 
+    }
+    
+    
+    .sidebar {
+        order: 2; 
+        width: 100%;
+        height: 30vh; /* Occupy ~25-30% */
+        flex: 0 0 auto;
         border-right: none;
         border-top: 1px solid var(--color-border);
         z-index: 20;
         padding: 16px;
         box-shadow: 0 -4px 12px rgba(0,0,0,0.05);
+        display: flex !important; /* Force flex display even if previously hidden */
     }
 
-    /* Collapsed State on Mobile */
+    /* Collapsed State on Mobile - Drawer Style */
     body.sidebar-collapsed .app-container {
-        grid-template-rows: 1fr 0px; 
+        grid-template-rows: none; /* Reset grid */
     }
     body.sidebar-collapsed .plots-wrapper {
-        grid-row: 1 / 3; 
-        height: 100vh;
+        width: 100%;
+        height: auto;
+        flex: 1; /* Grow to fill space */
     }
-    body.sidebar-collapsed .sidebar {
-        display: none; 
+
+    /* When sidebar collapsed on mobile, stack EVERYTHING vertically */
+    body.sidebar-collapsed .split-plot-row {
+        flex-direction: column;
+        flex: 6; /* Double the height relative to others basically */
+    }
+    body.sidebar-collapsed .split-plot-row .plot-container {
+        flex: 1;
     }
     
-    /* Button Position Overrides */
+    body.sidebar-collapsed #signal-plot-container,
+    body.sidebar-collapsed #mag-plot-container {
+        flex: 2; /* Slightly taller than default 1, relative to split-row's 6 */
+    }
+
+    body.sidebar-collapsed .sidebar {
+        display: none !important;
+    }
+    
     #toggle-sidebar-btn {
-        width: 48px;
-        height: 14px; 
+        position: fixed; /* Fixed to viewport to ensure visibility */
+        left: 50%;
+        transform: translateX(-50%);
+        width: 64px;
+        height: 24px;
         display: flex;
         justify-content: center;
         align-items: center;
-        border-radius: 4px 4px 0 0;
+        border-radius: 12px 12px 0 0;
         border-bottom: none; 
-        border-right: 1px solid var(--color-border); 
-        border-left: 1px solid var(--color-border);
+        border: 1px solid var(--color-border);
         box-shadow: 0 -2px 5px rgba(0,0,0,0.05);
-        transition: none; 
+        background: white;
+        z-index: 1001;
+        transition: none; /* Instant snap */
+        top: auto; /* Override desktop top: 50% */
+    }
+
+    /* Button Positioning logic */
+    body:not(.sidebar-collapsed) #toggle-sidebar-btn {
+        bottom: 30vh;
+    }
+
+    body.sidebar-collapsed #toggle-sidebar-btn {
+        bottom: 0;
+        left: 50%; /* Override desktop specificity */
     }
     
     #toggle-sidebar-btn span {
-        font-size: 16px;
-        margin-left: 0;
-        margin-top: -2px; 
+        font-size: 20px;
+        margin: 0;
     }
 
-    /* Visible State */
-    body:not(.sidebar-collapsed) #toggle-sidebar-btn {
-        bottom: 340px; 
-        left: 50%;
-        transform: translateX(-50%); 
-        border-radius: 4px 4px 0 0;
-    }
-     body:not(.sidebar-collapsed) #toggle-sidebar-btn span {
+    /* Chevron Rotation logic */
+    /* JS swaps icon between chevron_left (<) and chevron_right (>). 
+       On mobile, we simply rotate both -90deg to get Down (v) and Up (^). 
+    */
+    #toggle-sidebar-btn span {
         transform: rotate(-90deg);
-    }
-
-    /* Collapsed State */
-    body.sidebar-collapsed #toggle-sidebar-btn {
-        bottom: 0px;
-        left: 50%;
-        transform: translateX(-50%);
-        border-radius: 4px 4px 0 0;
-        border-bottom: none;
-        box-shadow: 0 -2px 5px rgba(0,0,0,0.1);
-    }
-    body.sidebar-collapsed #toggle-sidebar-btn span {
-        transform: rotate(-90deg);
-        margin-left: 0;
+        margin: 0;
     }
     
-    .split-plot-row .plot-container {
-        flex: 1 1 100px;
+    /* Hint Visibility */
+    .hint-desktop {
+        display: none;
+    }
+    .hint-mobile {
+        display: inline;
     }
 }
