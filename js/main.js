@@ -94,7 +94,7 @@ let isPlaying = null;
 let audioStartTime = 0;
 let lastSignalData = [];
 
-const STORAGE_KEY = 'ftwinding_state_v7';
+const STORAGE_KEY = 'ftwinding_state_v8';
 
 function init() {
     loadState();
@@ -204,8 +204,8 @@ function loadState() {
             if (parsed.showReIm !== undefined) state.showReIm = parsed.showReIm;
             if (parsed.showSurface !== undefined) state.showSurface = parsed.showSurface;
             
-            state.fftSampling = parsed.fftSampling !== undefined ? parsed.fftSampling : 2;
-            state.fftSmoothing = parsed.fftSmoothing !== undefined ? parsed.fftSmoothing : true;
+            state.fftSampling = parsed.fftSampling !== undefined ? parseFloat(parsed.fftSampling) : 2;
+            state.fftSmoothing = parsed.fftSmoothing !== undefined ? !!parsed.fftSmoothing : true;
             
             if (parsed.view3d) state.view3d = parsed.view3d;
             if (parsed.viewRI) state.viewRI = parsed.viewRI;
