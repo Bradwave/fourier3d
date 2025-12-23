@@ -35,13 +35,14 @@ const state = {
     viewAbs: { startFreq: 0, endFreq: 0, isPanning: false },
     selectedFrequency: 2.0,
     isDraggingFreq: false,
-    view3d: { rotX: -0.5, rotY: 0.5, rotZ: 0, scale: 1.0, isRotating: false, panX: 0, panY: 0, isPanning: false, hasInteracted: false, target: null },
+    view3d: { rotX: -1.4, rotY: -0.1, rotZ: -0.3, scale: 1.0, isRotating: false, panX: -50, panY: 0, isPanning: false, hasInteracted: false, target: null },
     gizmoHits: [],
     viewRI: { panX: 0, panY: 0, scale: 1.0, isPanning: false, hasInteracted: false },
     lastMouse: { x: 0, y: 0 },
     isFocusMode: false,
     showSurface: false,
     showGizmo: true,
+    showPlane: true,
     isSidebarCollapsed: false,
     // Memory Optimization Buffers
     buffers: {
@@ -68,7 +69,9 @@ const elements = {
     reimToggle: document.getElementById('reim-toggle'),
     surfaceToggle: document.getElementById('surface-toggle'),
     gizmoToggle: document.getElementById('gizmo-toggle'),
+    planeToggle: document.getElementById('plane-toggle'),
     resetBtn: document.getElementById('reset-btn'),
+    hardReloadBtn: document.getElementById('hard-reload-btn'),
     audioMultSlider: document.getElementById('audio-mult-slider'),
     audioMultDisplay: document.getElementById('audio-mult-display'),
     fftSamplingSlider: document.getElementById('fft-sampling-slider'),
@@ -118,6 +121,7 @@ function syncGlobalControls() {
     if (elements.reimToggle) elements.reimToggle.checked = state.showReIm;
     if (elements.surfaceToggle) elements.surfaceToggle.checked = state.showSurface;
     if (elements.gizmoToggle) elements.gizmoToggle.checked = state.showGizmo;
+    if (elements.planeToggle) elements.planeToggle.checked = state.showPlane;
     if (elements.audioMultSlider) {
         elements.audioMultSlider.value = state.audioMultiplier;
         elements.audioMultDisplay.innerText = state.audioMultiplier;
@@ -183,6 +187,7 @@ function saveState() {
         showReIm: state.showReIm,
         showSurface: state.showSurface,
         showGizmo: state.showGizmo,
+        showPlane: state.showPlane,
         viewAbs: state.viewAbs,
         isFocusMode: state.isFocusMode,
         isSidebarCollapsed: state.isSidebarCollapsed
@@ -209,6 +214,7 @@ function loadState() {
             if (parsed.showReIm !== undefined) state.showReIm = parsed.showReIm;
             if (parsed.showSurface !== undefined) state.showSurface = parsed.showSurface;
             if (parsed.showGizmo !== undefined) state.showGizmo = parsed.showGizmo;
+            if (parsed.showPlane !== undefined) state.showPlane = parsed.showPlane;
 
             state.fftSampling = parsed.fftSampling !== undefined ? parseFloat(parsed.fftSampling) : 2;
             state.fftSmoothing = parsed.fftSmoothing !== undefined ? !!parsed.fftSmoothing : true;
@@ -236,12 +242,13 @@ window.toggleFocusMode = () => {
 window.resetView = (type) => {
     if (type === '3d') {
         // Mutate existing object to preserve event listener references
-        state.view3d.rotX = -0.2;
-        state.view3d.rotY = 0.5;
+        state.view3d.rotX = -1.4;
+        state.view3d.rotY = -0.1;
+        state.view3d.rotZ = -0.3;
         state.view3d.scale = 1.0;
         state.view3d.isRotating = false;
         state.view3d.isPanning = false;
-        state.view3d.panX = 0;
+        state.view3d.panX = -50;
         state.view3d.panY = 0;
     } else if (type === 'ri') {
         // Reset Winding Pan & Scale (Increased default zoom)
@@ -425,6 +432,32 @@ function setupListeners() {
         location.reload();
     });
 
+    if (elements.hardReloadBtn) {
+        elements.hardReloadBtn.addEventListener('click', async () => {
+            // 1. Reset persistent high-memory settings (like 4x Sampling) to defaults
+            localStorage.clear();
+            sessionStorage.clear();
+            
+            // 2. Explicitly dump large data buffers immediately
+            state.buffers.complexSignal = [];
+            state.buffers.displaySignal = [];
+            state.buffers.fftEven = [];
+            state.buffers.fftOdd = [];
+
+            if ('caches' in window) {
+                try {
+                    const cacheNames = await caches.keys();
+                    await Promise.all(cacheNames.map(name => caches.delete(name)));
+                } catch (e) {
+                    console.error("Failed to clear caches:", e);
+                }
+            }
+            
+            // 3. Force server reload to clear generic browser heap/DOM memory
+            location.reload(true);
+        });
+    }
+
     elements.axisToggle.addEventListener('change', (e) => {
         state.showAxis = e.target.checked;
         saveState();
@@ -447,6 +480,13 @@ function setupListeners() {
     if (elements.gizmoToggle) {
         elements.gizmoToggle.addEventListener('change', (e) => {
             state.showGizmo = e.target.checked;
+            saveState();
+        });
+    }
+
+    if (elements.planeToggle) {
+        elements.planeToggle.addEventListener('change', (e) => {
+            state.showPlane = e.target.checked;
             saveState();
         });
     }
@@ -556,12 +596,16 @@ function setupListeners() {
         saveState();
     });
     absCanvas.addEventListener('wheel', (e) => {
-        if (!e.ctrlKey) return; e.preventDefault();
+        if (!e.ctrlKey) return;
+        e.preventDefault();
 
-        let maxCompFreq = 0; state.components.forEach(c => { if (c.freq > maxCompFreq) maxCompFreq = c.freq; });
+        let maxCompFreq = 0;
+        state.components.forEach(c => { if (c.freq > maxCompFreq) maxCompFreq = c.freq; });
         const strictMax = Math.max(20, Math.ceil(maxCompFreq * 1.5));
 
-        const rect = absCanvas.getBoundingClientRect(); const x = e.clientX - rect.left; const w = rect.width;
+        const rect = absCanvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const w = rect.width;
 
         // Define current view range
         let currentEnd = state.viewAbs.endFreq > 0 ? state.viewAbs.endFreq : strictMax;
@@ -1441,6 +1485,45 @@ function draw3DPlot(ctx, fft, canvas, maxFreq, N_FFT) {
     });
     ctx.stroke();
 
+    // Draw Transparent Re-Im Plane at Origin
+    if (state.showPlane) {
+        const planeSize = 1.0;
+        const p1 = project3D(0, planeSize, planeSize, cx, cy, scale);
+        const p2 = project3D(0, -planeSize, planeSize, cx, cy, scale);
+        const p3 = project3D(0, -planeSize, -planeSize, cx, cy, scale);
+        const p4 = project3D(0, planeSize, -planeSize, cx, cy, scale);
+
+        ctx.beginPath();
+        ctx.moveTo(p1.x, p1.y);
+        ctx.lineTo(p2.x, p2.y);
+        ctx.lineTo(p3.x, p3.y);
+        ctx.lineTo(p4.x, p4.y);
+        ctx.closePath();
+        ctx.fillStyle = 'rgba(128, 128, 128, 0.15)';
+        ctx.fill();
+
+        // Draw Grid on Plane
+        ctx.lineWidth = 0.5;
+        ctx.strokeStyle = 'rgba(128, 128, 128, 0.2)';
+        ctx.beginPath();
+        const gridSteps = 4; // 0.25 steps
+        for (let i = -gridSteps; i <= gridSteps; i++) {
+            const val = i / gridSteps;
+            // Horizontal lines (along Z/Re, varying Y/Im)
+            const h1 = project3D(0, val, planeSize, cx, cy, scale);
+            const h2 = project3D(0, val, -planeSize, cx, cy, scale);
+            ctx.moveTo(h1.x, h1.y);
+            ctx.lineTo(h2.x, h2.y);
+
+            // Vertical lines (along Y/Im, varying Z/Re)
+            const v1 = project3D(0, planeSize, val, cx, cy, scale);
+            const v2 = project3D(0, -planeSize, val, cx, cy, scale);
+            ctx.moveTo(v1.x, v1.y);
+            ctx.lineTo(v2.x, v2.y);
+        }
+        ctx.stroke();
+    }
+
     const origin = project3D(0, 0, 0, cx, cy, scale);
     const xAxis = project3D(1.2, 0, 0, cx, cy, scale);
     const yTop = project3D(0, 1.1, 0, cx, cy, scale);
@@ -1460,8 +1543,8 @@ function draw3DPlot(ctx, fft, canvas, maxFreq, N_FFT) {
     ctx.fillStyle = '#888';
     ctx.font = '10px monospace';
     ctx.fillText(state.showAxis ? 'Freq [Hz]' : 'Freq', xAxis.x, xAxis.y);
-    ctx.fillText('Im', yTop.x, yTop.y);
-    ctx.fillText('Re', zTop.x, zTop.y);
+    ctx.fillText('Re', yTop.x, yTop.y);
+    ctx.fillText('Im', zTop.x, zTop.y);
     if (state.showAxis) {
         // Draw multiple notches along Frequency Axis
         const numNotches = 5;
@@ -1484,11 +1567,22 @@ function draw3DPlot(ctx, fft, canvas, maxFreq, N_FFT) {
             ctx.fillText(txt, p.x - tw / 2, p.y + 12);
         }
     }
-    const dF = state.sampleRate / N_FFT; const maxK = Math.min(Math.ceil(maxFreq / dF), fft.length); const N_Base = (2048);
-    const pts = []; const pReal = []; const pImag = [];
-    const pRealWall = []; const pImagWall = [];
-    for (let k = 0; k < maxK; k++) {
-        const fVal = (k * dF); const x = fVal / maxFreq; const scaleFactor = (N_Base / 2); const re = fft[k].re / scaleFactor; const im = fft[k].im / scaleFactor;
+    const dF = state.sampleRate / N_FFT;
+    const maxK = Math.min(Math.ceil(maxFreq / dF), fft.length);
+    const N_Base = (2048);
+    const pts = [];
+    const pReal = [];
+    const pImag = [];
+    const pRealWall = [];
+    const pImagWall = [];
+    for (let k = 0;
+        k < maxK;
+        k++) {
+        const fVal = (k * dF);
+        const x = fVal / maxFreq;
+        const scaleFactor = (N_Base / 2);
+        const re = fft[k].re / scaleFactor;
+        const im = fft[k].im / scaleFactor;
         // Swap: y=im, z=re
         pts.push(project3D(x, im, re, cx, cy, scale));
 
@@ -1669,11 +1763,11 @@ function drawGizmo(ctx, w, h) {
         { vec: { x: 1, y: 0, z: 0 }, col: '#ff3e3e', lbl: 'w', neg: false },
         { vec: { x: -1, y: 0, z: 0 }, col: '#ff3e3e', lbl: '', neg: true },
         // Y is Im
-        { vec: { x: 0, y: 1, z: 0 }, col: '#80e535', lbl: 'Im', neg: false },
-        { vec: { x: 0, y: -1, z: 0 }, col: '#80e535', lbl: '-Im', neg: true },
+        { vec: { x: 0, y: 1, z: 0 }, col: '#80e535', lbl: 'Re', neg: false },
+        { vec: { x: 0, y: -1, z: 0 }, col: '#80e535', lbl: '-Re', neg: true },
         // Z is Re
-        { vec: { x: 0, y: 0, z: 1 }, col: '#3b7af5', lbl: 'Re', neg: false },
-        { vec: { x: 0, y: 0, z: -1 }, col: '#3b7af5', lbl: '-Re', neg: true }
+        { vec: { x: 0, y: 0, z: 1 }, col: '#3b7af5', lbl: 'Im', neg: false },
+        { vec: { x: 0, y: 0, z: -1 }, col: '#3b7af5', lbl: '-Im', neg: true }
     ];
 
     // Project All
@@ -1745,11 +1839,11 @@ function snapViewTo(vec) {
     // Let's hardcode the 6 canonical views for simplicity and stability
     let target = { rx: 0, ry: 0, rz: 0 };
 
-    if (vec.x === 1) target = { rx: 0, ry: Math.PI / 2, rz: 0 }; // Right (w) -> View from -X (Side). Re points Right.
+    if (vec.x === 1) target = { rx: 0, ry: Math.PI / 2, rz: 0 }; // Right (w) -> View Re-Im Plane. Re Right, Im Up.
     else if (vec.x === -1) target = { rx: 0, ry: -Math.PI / 2, rz: 0 }; // Left
-    else if (vec.y === 1) target = { rx: -Math.PI / 2, ry: 0, rz: 0 }; // Top? (Y matches Re)
+    else if (vec.y === 1) target = { rx: -Math.PI / 2, ry: 0, rz: 0 }; // Top (Im)
     else if (vec.y === -1) target = { rx: Math.PI / 2, ry: 0, rz: 0 }; // Bottom
-    else if (vec.z === 1) target = { rx: 0, ry: 0, rz: 0 }; // Front (Z matches Im)
+    else if (vec.z === 1) target = { rx: 0, ry: 0, rz: 0 }; // Front (Re)
     else if (vec.z === -1) target = { rx: 0, ry: Math.PI, rz: 0 }; // Back
 
     // Animate

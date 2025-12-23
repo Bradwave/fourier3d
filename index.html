@@ -116,6 +116,14 @@
                         </label>
                     </div>
 
+                    <div class="control-group control-group-row">
+                        <div class="control-label">Show Re-Im Plane</div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="plane-toggle" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+
                     <div class="divider-dashed">
                         <div class="control-label label-small">
                             Fourier Visualization</div>
@@ -193,6 +201,9 @@
             <div class="divider-solid">
                 <button id="reset-btn" class="secondary btn-full-width">
                     <span class="material-symbols-outlined">restart_alt</span> RESET APP
+                </button>
+                <button id="hard-reload-btn" class="secondary btn-full-width" style="margin-top: 5px;">
+                    <span class="material-symbols-outlined">cleaning_services</span> RELOAD & CLEAN BUFFERS
                 </button>
             </div>
         </aside>
