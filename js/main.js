@@ -342,6 +342,78 @@ function setupListeners() {
             }
         });
     });
+
+    // Global Keyboard Shortcuts
+    window.addEventListener('keydown', (e) => {
+        // Ignore if focus is on an input element
+        if (['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName)) return;
+
+        const ROT_SPEED = 0.02;
+        const TIME_SPEED = 0.02;
+        const FREQ_SPEED = 0.02;
+
+        switch (e.key.toLowerCase()) {
+            case 'w':
+                state.view3d.rotX -= ROT_SPEED;
+                triggerHintFade('view3d');
+                requestAnimationFrame(saveState);
+                break;
+            case 's':
+                state.view3d.rotX += ROT_SPEED;
+                triggerHintFade('view3d');
+                requestAnimationFrame(saveState);
+                break;
+            case 'a':
+                state.view3d.rotY -= ROT_SPEED;
+                triggerHintFade('view3d');
+                requestAnimationFrame(saveState);
+                break;
+            case 'd':
+                state.view3d.rotY += ROT_SPEED;
+                triggerHintFade('view3d');
+                requestAnimationFrame(saveState);
+                break;
+            case 'q':
+                state.view3d.rotZ -= ROT_SPEED;
+                triggerHintFade('view3d');
+                requestAnimationFrame(saveState);
+                break;
+            case 'e':
+                state.view3d.rotZ += ROT_SPEED;
+                triggerHintFade('view3d');
+                requestAnimationFrame(saveState);
+                break;
+            case 'arrowleft':
+                if (e.shiftKey) {
+                    // Move Frequency
+                    const maxFreq = state.sampleRate / 2;
+                    state.selectedFrequency = Math.max(0, state.selectedFrequency - FREQ_SPEED);
+                    updateFreqSliderUI();
+                } else {
+                    // Move Time
+                    state.selectedTime = Math.max(state.zoomStart, state.selectedTime - TIME_SPEED);
+                    state.selectedTime = Math.max(0, state.selectedTime);
+                    if (elements.timeInfo) elements.timeInfo.innerText = `Time: ${state.selectedTime.toFixed(2)}s`;
+                }
+                saveState();
+                break;
+            case 'arrowright':
+                if (e.shiftKey) {
+                    // Move Frequency
+                    const maxFreq = state.sampleRate / 2;
+                    state.selectedFrequency = Math.min(maxFreq, state.selectedFrequency + FREQ_SPEED);
+                    updateFreqSliderUI();
+                } else {
+                    // Move Time
+                    state.selectedTime = Math.min(state.zoomEnd, state.selectedTime + TIME_SPEED);
+                    state.selectedTime = Math.min(5.0, state.selectedTime);
+                    if (elements.timeInfo) elements.timeInfo.innerText = `Time: ${state.selectedTime.toFixed(2)}s`;
+                }
+                saveState();
+                break;
+        }
+    });
+
     elements.addComponentBtn.addEventListener('click', () => {
         state.components.push(new SignalComponent(1, 1.0));
         renderComponentsUI();
@@ -1388,8 +1460,8 @@ function draw3DPlot(ctx, fft, canvas, maxFreq, N_FFT) {
     ctx.fillStyle = '#888';
     ctx.font = '10px monospace';
     ctx.fillText(state.showAxis ? 'Freq [Hz]' : 'Freq', xAxis.x, xAxis.y);
-    ctx.fillText('Re', yTop.x, yTop.y);
-    ctx.fillText('Im', zTop.x, zTop.y);
+    ctx.fillText('Im', yTop.x, yTop.y);
+    ctx.fillText('Re', zTop.x, zTop.y);
     if (state.showAxis) {
         // Draw multiple notches along Frequency Axis
         const numNotches = 5;
@@ -1417,10 +1489,33 @@ function draw3DPlot(ctx, fft, canvas, maxFreq, N_FFT) {
     const pRealWall = []; const pImagWall = [];
     for (let k = 0; k < maxK; k++) {
         const fVal = (k * dF); const x = fVal / maxFreq; const scaleFactor = (N_Base / 2); const re = fft[k].re / scaleFactor; const im = fft[k].im / scaleFactor;
-        pts.push(project3D(x, re, im, cx, cy, scale));
-        pReal.push(project3D(x, re, 0, cx, cy, scale));
-        pImag.push(project3D(x, 0, im, cx, cy, scale));
-        if (state.showReIm) { pRealWall.push(project3D(x, re, -1, cx, cy, scale)); pImagWall.push(project3D(x, -1, im, cx, cy, scale)); }
+        // Swap: y=im, z=re
+        pts.push(project3D(x, im, re, cx, cy, scale));
+
+        // pReal: Shows Re component. Previously (x, re, 0). Now if Re is Z-axis, should it be (x, 0, re)? 
+        // Logic check: pReal usually shows the projection on the Real Plane. 
+        // Previously Re was on Y-axis. Now Re is on Z-axis.
+        // So pReal should have Y=0. -> project3D(x, 0, re)
+        pReal.push(project3D(x, 0, re, cx, cy, scale));
+
+        // pImag: Shows Im component. Previously (x, 0, im). Now Im is on Y-axis.
+        // So pImag should have Z=0 -> project3D(x, im, 0)
+        pImag.push(project3D(x, im, 0, cx, cy, scale));
+
+        // Wall Projections
+        // Wall is usually "behind" the graph. 
+        // Old ReWall: (x, re, -1) [Im fixed at back]
+        // Old ImWall: (x, -1, im) [Re fixed at bottom]
+
+        // New: Re is Z. Im is Y.
+        // ReWall (Back Plane in Z): Fix Im at -1 (Bottom)? Or back?
+        // Let's fix the OTHER axis to -1.
+        // To show Re curve, we project onto a plane where Im is constant. -> (x, -1, re) (Im=-1)
+        // To show Im curve, we project onto a plane where Re is constant. -> (x, im, -1) (Re=-1)
+        if (state.showReIm) {
+            pRealWall.push(project3D(x, -1, re, cx, cy, scale));
+            pImagWall.push(project3D(x, im, -1, cx, cy, scale));
+        }
     }
 
     // Draw Surface (Revolution of Magnitude)
@@ -1451,8 +1546,10 @@ function draw3DPlot(ctx, fft, canvas, maxFreq, N_FFT) {
             const currRing = [];
             for (let j = 0; j <= segments; j++) {
                 const theta = (j / segments) * Math.PI * 2;
-                const dy = mag * Math.cos(theta);
-                const dz = mag * Math.sin(theta);
+                const dy = mag * Math.cos(theta); // Y component
+                const dz = mag * Math.sin(theta); // Z component
+                // Surface revolution is usually around X axis.
+                // We just project these points.
                 currRing.push(project3D(x, dy, dz, cx, cy, scale));
             }
 
@@ -1478,40 +1575,78 @@ function draw3DPlot(ctx, fft, canvas, maxFreq, N_FFT) {
 
     ctx.lineWidth = 1;
     // Central projections: Keep somewhat visible
-    ctx.strokeStyle = 'rgba(20, 132, 230, 0.3)'; ctx.beginPath(); drawSpline(ctx, pReal, state.fftSmoothing); ctx.stroke();
-    ctx.strokeStyle = 'rgba(100, 100, 100, 0.3)'; ctx.beginPath(); drawSpline(ctx, pImag, state.fftSmoothing); ctx.stroke();
+    ctx.strokeStyle = 'rgba(20, 132, 230, 0.3)';
+    ctx.beginPath();
+    drawSpline(ctx, pReal, state.fftSmoothing);
+    ctx.stroke();
+    ctx.strokeStyle = 'rgba(100, 100, 100, 0.3)';
+    ctx.beginPath();
+    drawSpline(ctx, pImag, state.fftSmoothing);
+    ctx.stroke();
     if (state.showReIm) {
         // Wall projections: More transparent (solid but alpha ~0.4)
-        ctx.strokeStyle = 'rgba(20, 132, 230, 0.4)'; ctx.lineWidth = 1.5; ctx.beginPath(); drawSpline(ctx, pRealWall, state.fftSmoothing); ctx.stroke();
-        ctx.strokeStyle = 'rgba(100, 100, 100, 0.4)'; ctx.lineWidth = 1.5; ctx.beginPath(); drawSpline(ctx, pImagWall, state.fftSmoothing); ctx.stroke();
+        ctx.strokeStyle = 'rgba(20, 132, 230, 0.4)';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        drawSpline(ctx, pRealWall, state.fftSmoothing);
+        ctx.stroke();
+        ctx.strokeStyle = 'rgba(100, 100, 100, 0.4)';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        drawSpline(ctx, pImagWall, state.fftSmoothing);
+        ctx.stroke();
     }
-    ctx.strokeStyle = '#1a1a1a'; ctx.lineWidth = 1.5; ctx.beginPath(); drawSpline(ctx, pts, state.fftSmoothing); ctx.stroke();
+    ctx.strokeStyle = '#1a1a1a';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    drawSpline(ctx, pts, state.fftSmoothing);
+    ctx.stroke();
     const seekIdx = Math.round(state.selectedFrequency / dF);
     if (seekIdx < pts.length) {
-        const closest = pts[seekIdx]; ctx.fillStyle = '#1484e6'; ctx.beginPath(); ctx.arc(closest.x, closest.y, 4, 0, Math.PI * 2); ctx.fill();
-        const clReal = pReal[seekIdx]; const clImag = pImag[seekIdx];
-        ctx.beginPath(); ctx.strokeStyle = 'rgba(20, 132, 230, 0.4)'; ctx.setLineDash([2, 2]);
-        ctx.moveTo(closest.x, closest.y); ctx.lineTo(clReal.x, clReal.y); ctx.moveTo(closest.x, closest.y); ctx.lineTo(clImag.x, clImag.y);
+        const closest = pts[seekIdx];
+        ctx.fillStyle = '#1484e6';
+        ctx.beginPath();
+        ctx.arc(closest.x, closest.y, 4, 0, Math.PI * 2);
+        ctx.fill();
+        const clReal = pReal[seekIdx];
+        const clImag = pImag[seekIdx];
+        ctx.beginPath();
+        ctx.strokeStyle = 'rgba(20, 132, 230, 0.4)';
+        ctx.setLineDash([2, 2]);
+        ctx.moveTo(closest.x, closest.y);
+        ctx.lineTo(clReal.x, clReal.y);
+        ctx.moveTo(closest.x, closest.y);
+        ctx.lineTo(clImag.x, clImag.y);
         if (state.showReIm && pRealWall.length > seekIdx) {
             const clRealWall = pRealWall[seekIdx];
             const clImagWall = pImagWall[seekIdx];
-            ctx.moveTo(clReal.x, clReal.y); ctx.lineTo(clRealWall.x, clRealWall.y);
-            ctx.moveTo(clImag.x, clImag.y); ctx.lineTo(clImagWall.x, clImagWall.y);
+            ctx.moveTo(clReal.x, clReal.y);
+            ctx.lineTo(clRealWall.x, clRealWall.y);
+            ctx.moveTo(clImag.x, clImag.y);
+            ctx.lineTo(clImagWall.x, clImagWall.y);
 
             // Draw small dots on wall using same stroke color but full opacity or standard color
             // Use same color as projection lines but solid
             // Real Wall Point
-            ctx.stroke(); ctx.beginPath(); ctx.fillStyle = 'rgba(20, 132, 230, 0.8)';
-            ctx.arc(clRealWall.x, clRealWall.y, 2.5, 0, Math.PI * 2); ctx.fill();
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.fillStyle = 'rgba(20, 132, 230, 0.8)';
+            ctx.arc(clRealWall.x, clRealWall.y, 2.5, 0, Math.PI * 2);
+            ctx.fill();
 
             // Imag Wall Point
-            ctx.beginPath(); ctx.fillStyle = 'rgba(100, 100, 100, 0.8)';
-            ctx.arc(clImagWall.x, clImagWall.y, 2.5, 0, Math.PI * 2); ctx.fill();
+            ctx.beginPath();
+            ctx.fillStyle = 'rgba(100, 100, 100, 0.8)';
+            ctx.arc(clImagWall.x, clImagWall.y, 2.5, 0, Math.PI * 2);
+            ctx.fill();
 
             // Resume dash connection
-            ctx.beginPath(); ctx.setLineDash([2, 2]); ctx.strokeStyle = 'rgba(20, 132, 230, 0.4)';
+            ctx.beginPath();
+            ctx.setLineDash([2, 2]);
+            ctx.strokeStyle = 'rgba(20, 132, 230, 0.4)';
         }
-        ctx.stroke(); ctx.setLineDash([]);
+        ctx.stroke();
+        ctx.setLineDash([]);
     }
 
     if (state.showGizmo) {
@@ -1522,20 +1657,23 @@ function draw3DPlot(ctx, fft, canvas, maxFreq, N_FFT) {
 function drawGizmo(ctx, w, h) {
     const size = 30;
     const padding = 40;
-    const cx = padding;
+    const cx = w - padding;
     const cy = h - padding;
 
     // Clear hits
     state.gizmoHits = [];
 
     // Axes definitions: Direction, Color, Label
+    // Axes definitions: Direction, Color, Label
     const axes = [
-        { vec: { x: 1, y: 0, z: 0 }, col: '#ff3e3e', lbl: 'X', neg: false },
+        { vec: { x: 1, y: 0, z: 0 }, col: '#ff3e3e', lbl: 'w', neg: false },
         { vec: { x: -1, y: 0, z: 0 }, col: '#ff3e3e', lbl: '', neg: true },
-        { vec: { x: 0, y: 1, z: 0 }, col: '#80e535', lbl: 'Re', neg: false },
-        { vec: { x: 0, y: -1, z: 0 }, col: '#80e535', lbl: '-Re', neg: true }, // Added label
-        { vec: { x: 0, y: 0, z: 1 }, col: '#3b7af5', lbl: 'Im', neg: false },
-        { vec: { x: 0, y: 0, z: -1 }, col: '#3b7af5', lbl: '-Im', neg: true } // Added label
+        // Y is Im
+        { vec: { x: 0, y: 1, z: 0 }, col: '#80e535', lbl: 'Im', neg: false },
+        { vec: { x: 0, y: -1, z: 0 }, col: '#80e535', lbl: '-Im', neg: true },
+        // Z is Re
+        { vec: { x: 0, y: 0, z: 1 }, col: '#3b7af5', lbl: 'Re', neg: false },
+        { vec: { x: 0, y: 0, z: -1 }, col: '#3b7af5', lbl: '-Re', neg: true }
     ];
 
     // Project All
@@ -1580,7 +1718,7 @@ function drawGizmo(ctx, w, h) {
             // ctx.stroke();
 
             // Label
-            ctx.fillStyle = '#000'; // Text
+            ctx.fillStyle = '#fff'; // Text
             ctx.fillText(p.lbl, p.px, p.py);
 
             // Register Hit
@@ -1607,8 +1745,8 @@ function snapViewTo(vec) {
     // Let's hardcode the 6 canonical views for simplicity and stability
     let target = { rx: 0, ry: 0, rz: 0 };
 
-    if (vec.x === 1) target = { rx: 0, ry: -Math.PI / 2, rz: 0 }; // Right
-    else if (vec.x === -1) target = { rx: 0, ry: Math.PI / 2, rz: 0 }; // Left
+    if (vec.x === 1) target = { rx: 0, ry: Math.PI / 2, rz: 0 }; // Right (w) -> View from -X (Side). Re points Right.
+    else if (vec.x === -1) target = { rx: 0, ry: -Math.PI / 2, rz: 0 }; // Left
     else if (vec.y === 1) target = { rx: -Math.PI / 2, ry: 0, rz: 0 }; // Top? (Y matches Re)
     else if (vec.y === -1) target = { rx: Math.PI / 2, ry: 0, rz: 0 }; // Bottom
     else if (vec.z === 1) target = { rx: 0, ry: 0, rz: 0 }; // Front (Z matches Im)
