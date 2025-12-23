@@ -35,11 +35,13 @@ const state = {
     viewAbs: { startFreq: 0, endFreq: 0, isPanning: false },
     selectedFrequency: 2.0,
     isDraggingFreq: false,
-    view3d: { rotX: -0.5, rotY: 0.5, rotZ: 0, scale: 1.0, isRotating: false, panX: 0, panY: 0, isPanning: false, hasInteracted: false },
+    view3d: { rotX: -0.5, rotY: 0.5, rotZ: 0, scale: 1.0, isRotating: false, panX: 0, panY: 0, isPanning: false, hasInteracted: false, target: null },
+    gizmoHits: [],
     viewRI: { panX: 0, panY: 0, scale: 1.0, isPanning: false, hasInteracted: false },
     lastMouse: { x: 0, y: 0 },
     isFocusMode: false,
     showSurface: false,
+    showGizmo: true,
     isSidebarCollapsed: false,
     // Memory Optimization Buffers
     buffers: {
@@ -65,6 +67,7 @@ const elements = {
     axisToggle: document.getElementById('axis-toggle'),
     reimToggle: document.getElementById('reim-toggle'),
     surfaceToggle: document.getElementById('surface-toggle'),
+    gizmoToggle: document.getElementById('gizmo-toggle'),
     resetBtn: document.getElementById('reset-btn'),
     audioMultSlider: document.getElementById('audio-mult-slider'),
     audioMultDisplay: document.getElementById('audio-mult-display'),
@@ -114,6 +117,7 @@ function syncGlobalControls() {
     if (elements.axisToggle) elements.axisToggle.checked = state.showAxis;
     if (elements.reimToggle) elements.reimToggle.checked = state.showReIm;
     if (elements.surfaceToggle) elements.surfaceToggle.checked = state.showSurface;
+    if (elements.gizmoToggle) elements.gizmoToggle.checked = state.showGizmo;
     if (elements.audioMultSlider) {
         elements.audioMultSlider.value = state.audioMultiplier;
         elements.audioMultDisplay.innerText = state.audioMultiplier;
@@ -178,6 +182,7 @@ function saveState() {
         viewRI: state.viewRI,
         showReIm: state.showReIm,
         showSurface: state.showSurface,
+        showGizmo: state.showGizmo,
         viewAbs: state.viewAbs,
         isFocusMode: state.isFocusMode,
         isSidebarCollapsed: state.isSidebarCollapsed
@@ -203,6 +208,7 @@ function loadState() {
             if (parsed.showAxis !== undefined) state.showAxis = parsed.showAxis;
             if (parsed.showReIm !== undefined) state.showReIm = parsed.showReIm;
             if (parsed.showSurface !== undefined) state.showSurface = parsed.showSurface;
+            if (parsed.showGizmo !== undefined) state.showGizmo = parsed.showGizmo;
 
             state.fftSampling = parsed.fftSampling !== undefined ? parseFloat(parsed.fftSampling) : 2;
             state.fftSmoothing = parsed.fftSmoothing !== undefined ? !!parsed.fftSmoothing : true;
@@ -362,6 +368,13 @@ function setupListeners() {
     if (elements.surfaceToggle) {
         elements.surfaceToggle.addEventListener('change', (e) => {
             state.showSurface = e.target.checked;
+            saveState();
+        });
+    }
+
+    if (elements.gizmoToggle) {
+        elements.gizmoToggle.addEventListener('change', (e) => {
+            state.showGizmo = e.target.checked;
             saveState();
         });
     }
@@ -613,6 +626,26 @@ function setupListeners() {
 
             if (evCache.length === 1) {
                 viewObj.isPanning = e.ctrlKey || (name === 'viewRI'); // RI is always pan? Or just pan by default
+
+                // Gizmo Hit Test (view3d only)
+                if (name === 'view3d' && state.showGizmo) {
+                    const rect = canvas.getBoundingClientRect();
+                    const mx = e.clientX - rect.left;
+                    const my = e.clientY - rect.top;
+
+                    // Check hits
+                    const hit = state.gizmoHits.find(h => {
+                        const dx = mx - h.x;
+                        const dy = my - h.y;
+                        return (dx * dx + dy * dy) < (h.r * h.r);
+                    });
+
+                    if (hit) {
+                        snapViewTo(hit.axis);
+                        return; // Stop other interactions
+                    }
+                }
+
                 // view3d Rotate default, Pan ctrl.
                 if (name === 'view3d' && !e.ctrlKey) viewObj.isRotating = true;
 
@@ -1061,6 +1094,8 @@ function animate() {
     const multiplier = Math.pow(2, Math.floor(safeSampling) - 1);
     const N_FFT = N_Base * multiplier;
 
+    updateViewAnimation();
+
     if (state.view3d.hasInteracted && elements.hints.view3d) elements.hints.view3d.style.opacity = 0;
     if (state.viewRI.hasInteracted && elements.hints.viewRI) elements.hints.viewRI.style.opacity = 0;
 
@@ -1258,7 +1293,9 @@ function drawSignalPlot(ctx, data, canvas) {
 function project3D(x, y, z, cx, cy, scale) {
     cx += state.view3d.panX;
     cy += state.view3d.panY;
+}
 
+function rotatePoint(x, y, z) {
     // Apply rotations in order: Z, then X, then Y
     const rotX = state.view3d.rotX;
     const rotY = state.view3d.rotY;
@@ -1271,32 +1308,31 @@ function project3D(x, y, z, cx, cy, scale) {
     const cosZ = Math.cos(rotZ);
     const sinZ = Math.sin(rotZ);
 
-    // 1. Rotate around Z
-    // x' = x*cosZ - y*sinZ
-    // y' = x*sinZ + y*cosZ
-    // z' = z
+    // 1. Z
     let x1 = x * cosZ - y * sinZ;
     let y1 = x * sinZ + y * cosZ;
     let z1 = z;
 
-    // 2. Rotate around X
-    // x'' = x'
-    // y'' = y'*cosX - z'*sinX
-    // z'' = y'*sinX + z'*cosX
+    // 2. X
     let y2 = y1 * cosX - z1 * sinX;
     let z2 = y1 * sinX + z1 * cosX;
 
-    // 3. Rotate around Y
-    // x''' = x'*cosY + z''*sinY
-    // y''' = y''
-    // z''' = -x'*sinY + z''*cosY
+    // 3. Y
     let x3 = x1 * cosY + z2 * sinY;
     let z3 = -x1 * sinY + z2 * cosY;
 
+    return { x: x3, y: y2, z: z3 };
+}
+
+function project3D(x, y, z, cx, cy, scale) {
+    cx += state.view3d.panX;
+    cy += state.view3d.panY;
+
+    const p = rotatePoint(x, y, z);
     const s = scale * state.view3d.scale;
     return {
-        x: cx + x3 * s,
-        y: cy - y2 * s
+        x: cx + p.x * s,
+        y: cy - p.y * s
     };
 }
 
@@ -1476,6 +1512,131 @@ function draw3DPlot(ctx, fft, canvas, maxFreq, N_FFT) {
             ctx.beginPath(); ctx.setLineDash([2, 2]); ctx.strokeStyle = 'rgba(20, 132, 230, 0.4)';
         }
         ctx.stroke(); ctx.setLineDash([]);
+    }
+
+    if (state.showGizmo) {
+        drawGizmo(ctx, w, h);
+    }
+}
+
+function drawGizmo(ctx, w, h) {
+    const size = 30;
+    const padding = 40;
+    const cx = padding;
+    const cy = h - padding;
+
+    // Clear hits
+    state.gizmoHits = [];
+
+    // Axes definitions: Direction, Color, Label
+    const axes = [
+        { vec: { x: 1, y: 0, z: 0 }, col: '#ff3e3e', lbl: 'X', neg: false },
+        { vec: { x: -1, y: 0, z: 0 }, col: '#ff3e3e', lbl: '', neg: true },
+        { vec: { x: 0, y: 1, z: 0 }, col: '#80e535', lbl: 'Re', neg: false },
+        { vec: { x: 0, y: -1, z: 0 }, col: '#80e535', lbl: '-Re', neg: true }, // Added label
+        { vec: { x: 0, y: 0, z: 1 }, col: '#3b7af5', lbl: 'Im', neg: false },
+        { vec: { x: 0, y: 0, z: -1 }, col: '#3b7af5', lbl: '-Im', neg: true } // Added label
+    ];
+
+    // Project All
+    const projected = axes.map(axis => {
+        const p = rotatePoint(axis.vec.x, axis.vec.y, axis.vec.z);
+        // p.z is depth. +z is close to viewer in standard coord right hand?
+        // Our rotatePoint: z3 is positive towards viewer? 
+        // Let's assume standard: larger z3 is closer.
+        return {
+            ...axis,
+            px: cx + p.x * size,
+            py: cy - p.y * size,
+            depth: p.z
+        };
+    });
+
+    // Sort by depth (painters algo)
+    projected.sort((a, b) => a.depth - b.depth);
+
+    ctx.lineWidth = 2;
+    ctx.font = 'bold 10px monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+
+    projected.forEach(p => {
+        // Draw line from center
+        // If negative, assume wireframe/dashed or just simple line
+        // If positive, nice line + circle
+
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.lineTo(p.px, p.py);
+        ctx.strokeStyle = p.col;
+        ctx.stroke();
+
+        if (!p.neg) {
+            // Draw Circle cap
+            ctx.beginPath();
+            ctx.arc(p.px, p.py, 7, 0, Math.PI * 2);
+            ctx.fillStyle = p.col; // Solid background
+            ctx.fill();
+            // ctx.stroke();
+
+            // Label
+            ctx.fillStyle = '#000'; // Text
+            ctx.fillText(p.lbl, p.px, p.py);
+
+            // Register Hit
+            state.gizmoHits.push({ x: p.px, y: p.py, r: 8, axis: p.vec });
+        } else {
+            // Negative axis simplified cap
+            ctx.beginPath();
+            // ctx.arc(p.px, p.py, 2, 0, Math.PI * 2);
+            ctx.fillStyle = p.col;
+            ctx.fill();
+        }
+    });
+}
+
+function snapViewTo(vec) {
+    // Determines best rotation angles to look FROM vector towards origin
+    // or LOOK AT vector? Usually click 'X' -> Look from X.
+
+    // We want to align the Camera Z axis with the Vector? 
+    // Or invert..
+    // Standard Blender: Click 'Z' -> Top View -> Looking down Z.
+    // So RotX such that Y axis aligns...
+
+    // Let's hardcode the 6 canonical views for simplicity and stability
+    let target = { rx: 0, ry: 0, rz: 0 };
+
+    if (vec.x === 1) target = { rx: 0, ry: -Math.PI / 2, rz: 0 }; // Right
+    else if (vec.x === -1) target = { rx: 0, ry: Math.PI / 2, rz: 0 }; // Left
+    else if (vec.y === 1) target = { rx: -Math.PI / 2, ry: 0, rz: 0 }; // Top? (Y matches Re)
+    else if (vec.y === -1) target = { rx: Math.PI / 2, ry: 0, rz: 0 }; // Bottom
+    else if (vec.z === 1) target = { rx: 0, ry: 0, rz: 0 }; // Front (Z matches Im)
+    else if (vec.z === -1) target = { rx: 0, ry: Math.PI, rz: 0 }; // Back
+
+    // Animate
+    state.view3d.target = target;
+    state.view3d.hasInteracted = true;
+}
+
+function updateViewAnimation() {
+    const t = state.view3d.target;
+    if (!t) return;
+
+    const speed = 0.2;
+    const diffX = t.rx - state.view3d.rotX;
+    const diffY = t.ry - state.view3d.rotY;
+    const diffZ = t.rz - state.view3d.rotZ;
+
+    if (Math.abs(diffX) < 0.01 && Math.abs(diffY) < 0.01 && Math.abs(diffZ) < 0.01) {
+        state.view3d.rotX = t.rx;
+        state.view3d.rotY = t.ry;
+        state.view3d.rotZ = t.rz;
+        state.view3d.target = null;
+    } else {
+        state.view3d.rotX += diffX * speed;
+        state.view3d.rotY += diffY * speed;
+        state.view3d.rotZ += diffZ * speed;
     }
 }
 
