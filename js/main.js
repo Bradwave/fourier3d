@@ -234,7 +234,7 @@ function updateSignalSliderUI() {
             fill.style.width = ((state.zoomEnd - state.zoomStart) / 5) * 100 + '%';
         }
         const label = document.getElementById('display-segment-label');
-        if(label) label.innerText = `Display Segment (${state.zoomStart.toFixed(2)}s - ${state.zoomEnd.toFixed(2)}s)`;
+        if(label) label.innerText = `Displayed time (${state.zoomStart.toFixed(2)}s - ${state.zoomEnd.toFixed(2)}s)`;
     }
 }
 
@@ -261,7 +261,7 @@ function updateFreqSliderUI() {
             fill.style.width = ((displayEnd - state.viewAbs.startFreq) / maxLimit) * 100 + '%';
         }
         const label = document.getElementById('freq-segment-label');
-        if(label) label.innerText = `Freq Segment (${state.viewAbs.startFreq.toFixed(1)}Hz - ${state.viewAbs.endFreq === 0 ? 'Auto' : state.viewAbs.endFreq.toFixed(1) + 'Hz'})`;
+        if(label) label.innerText = `Displayed frequencies (${state.viewAbs.startFreq.toFixed(1)}Hz - ${state.viewAbs.endFreq === 0 ? 'Auto' : state.viewAbs.endFreq.toFixed(1) + 'Hz'})`;
     }
 }
 
@@ -875,7 +875,19 @@ function drawAbsTransform(ctx, fft, canvas, maxFreq, N_FFT) {
     const w = canvas.width / (window.devicePixelRatio || 1); const h = canvas.height / (window.devicePixelRatio || 1);
     const startF = state.viewAbs.startFreq; const endF = state.viewAbs.endFreq > 0 ? state.viewAbs.endFreq : maxFreq; const freqRange = endF - startF;
     let yZero = h; let yScale = h * 0.8;
-    if (state.showReIm) { yZero = h / 2; yScale = (h / 2) * 0.8; if (state.showAxis) drawAxis(ctx, w, h, [startF, endF], [-1, 1], ' Hz', ''); } else { if (state.showAxis) drawAxis(ctx, w, h, [startF, endF], [0, 1.5], ' Hz', ''); }
+    if (state.showReIm) { 
+        yZero = h / 2; 
+        yScale = (h / 2) * 0.8; 
+        if (state.showAxis) drawAxis(ctx, w, h, [startF, endF], [-1, 1], ' Hz', ''); 
+    } else { 
+        // Shift axis to start below 0 so the curve isn't cut off
+        const yMin = -0.15;
+        const yMax = 1.6;
+        const ySpan = yMax - yMin;
+        yScale = h / ySpan;
+        yZero = h + ((yMin) / ySpan) * h; // y position for value 0
+        if (state.showAxis) drawAxis(ctx, w, h, [startF, endF], [yMin, yMax], ' Hz', ''); 
+    }
     if (state.showReIm) { ctx.beginPath(); ctx.strokeStyle = '#eee'; ctx.moveTo(0, yZero); ctx.lineTo(w, yZero); ctx.stroke(); }
     
     // Guard against infinite/nan X
