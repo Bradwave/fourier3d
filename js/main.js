@@ -25,6 +25,7 @@ const state = {
     showAxis: true,
     signalMode: 'real',
     audioMultiplier: 50,
+    ampMultiplier: 1.0,
     fftSampling: 2,
     fftSmoothing: true,
     showReIm: false,
@@ -150,6 +151,13 @@ function syncGlobalControls() {
     if (sbBtn) {
         if (document.body.classList.contains('sidebar-collapsed')) sbBtn.innerHTML = '<span class="material-symbols-outlined">chevron_right</span>';
         else sbBtn.innerHTML = '<span class="material-symbols-outlined">chevron_left</span>';
+    }
+
+    if (state.ampMultiplier !== undefined) {
+        const el = document.getElementById('global-amp-slider');
+        const disp = document.getElementById('global-amp-display');
+        if (el) el.value = state.ampMultiplier;
+        if (disp) disp.innerText = state.ampMultiplier.toFixed(1);
     }
 }
 
@@ -874,6 +882,17 @@ function setupListeners() {
 
     setupPlotInteractions(elements.canvases.transform3d, state.view3d, 'view3d');
     setupPlotInteractions(elements.canvases.ri, state.viewRI, 'viewRI');
+
+    // Global Amp Slider
+    const globalAmpSlider = document.getElementById('global-amp-slider');
+    if (globalAmpSlider) {
+        globalAmpSlider.addEventListener('input', (e) => {
+            state.ampMultiplier = parseFloat(e.target.value);
+            const disp = document.getElementById('global-amp-display');
+            if (disp) disp.innerText = state.ampMultiplier.toFixed(1);
+            saveState();
+        });
+    }
 }
 
 // ... Component Logic ... 
@@ -1135,7 +1154,7 @@ function getSignalValueAt(t) {
         }
         val += comp.amp * Math.cos(2 * Math.PI * comp.freq * t + (comp.phase || 0)) * ampOffset;
     });
-    return val;
+    return val * state.ampMultiplier;
 }
 
 let fftBitRev = new Uint32Array(16384); // Pre-allocate bit reversal table
@@ -1398,7 +1417,20 @@ function animate() {
 function drawSignalPlot(ctx, data, canvas) {
     const w = canvas.width / (window.devicePixelRatio || 1);
     const h = canvas.height / (window.devicePixelRatio || 1);
-    const yRange = [-2, 2];
+
+    // Calculate dynamic range
+    let maxVal = 0;
+    // Optimize: Check every Nth sample or just check bounds if array is huge? 
+    // Array is 2048 (N_Base). It's fast.
+    for (let i = 0; i < data.length; i++) {
+        const abs = Math.abs(data[i].val);
+        if (abs > maxVal) maxVal = abs;
+    }
+    const bound = Math.max(2, Math.ceil(maxVal * 1.1)); // 10% padding, integer ticks preference? or just simple. 
+    // Let's keep it simple: Math.max(2, maxVal). Maybe round up to nearest 0.5?
+    // User said "min range should be -2 to +2".
+    
+    const yRange = [-bound, bound];
 
     if (state.showAxis) {
         drawAxis(ctx, w, h, [state.zoomStart, state.zoomEnd], yRange, ' s', '');
@@ -1451,9 +1483,9 @@ function drawSignalPlot(ctx, data, canvas) {
     // We iterate the relevant slice but calculate X based on exact time of that sample
     if (idxEnd > idxStart) {
         ctx.beginPath();
-        ctx.strokeStyle = '#1a1a1a';
+        ctx.strokeStyle = '#1484e6';
         ctx.lineWidth = 1.5;
-        const yScale = h / 4;
+        const yScale = h / (2 * bound);
         const yCenter = h / 2;
 
         let first = true;
@@ -1498,11 +1530,14 @@ function drawSignalPlot(ctx, data, canvas) {
 
         ctx.setLineDash([]);
         const val = getSignalValueAt(state.selectedTime);
-        const y = h / 2 - val * (h / 4);
+        const y = h / 2 - val * (h / (2 * bound));
         ctx.beginPath();
         ctx.fillStyle = '#1484e6';
         ctx.arc(tX, y, 4, 0, Math.PI * 2);
         ctx.fill();
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 2;
+        ctx.stroke();
     }
 }
 
@@ -1768,7 +1803,7 @@ function draw3DPlot(ctx, fft, canvas, maxFreq, N_FFT) {
     ctx.beginPath();
     drawSpline(ctx, pReal, state.fftSmoothing);
     ctx.stroke();
-    ctx.strokeStyle = 'rgba(100, 100, 100, 0.3)';
+    ctx.strokeStyle = 'rgba(128, 229, 53, 0.5)';
     ctx.beginPath();
     drawSpline(ctx, pImag, state.fftSmoothing);
     ctx.stroke();
@@ -1779,7 +1814,7 @@ function draw3DPlot(ctx, fft, canvas, maxFreq, N_FFT) {
         ctx.beginPath();
         drawSpline(ctx, pRealWall, state.fftSmoothing);
         ctx.stroke();
-        ctx.strokeStyle = 'rgba(100, 100, 100, 0.4)';
+        ctx.strokeStyle = 'rgba(128, 229, 53, 0.5)';
         ctx.lineWidth = 1.5;
         ctx.beginPath();
         drawSpline(ctx, pImagWall, state.fftSmoothing);
@@ -1793,10 +1828,13 @@ function draw3DPlot(ctx, fft, canvas, maxFreq, N_FFT) {
     const seekIdx = Math.round(state.selectedFrequency / dF);
     if (seekIdx < pts.length) {
         const closest = pts[seekIdx];
-        ctx.fillStyle = '#1484e6';
+        ctx.fillStyle = '#000000';
         ctx.beginPath();
         ctx.arc(closest.x, closest.y, 4, 0, Math.PI * 2);
         ctx.fill();
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 2;
+        ctx.stroke();
         const clReal = pReal[seekIdx];
         const clImag = pImag[seekIdx];
         ctx.beginPath();
@@ -1825,7 +1863,7 @@ function draw3DPlot(ctx, fft, canvas, maxFreq, N_FFT) {
 
             // Imag Wall Point
             ctx.beginPath();
-            ctx.fillStyle = 'rgba(100, 100, 100, 0.8)';
+            ctx.fillStyle = 'rgba(128, 229, 53, 0.8)';
             ctx.arc(clImagWall.x, clImagWall.y, 2.5, 0, Math.PI * 2);
             ctx.fill();
 
@@ -1860,9 +1898,9 @@ function drawGizmo(ctx, w, h) {
         // Y is Re - Use Blue to match Plot Color
         { vec: { x: 0, y: 1, z: 0 }, col: '#1484e6', lbl: 'Re', neg: false },
         { vec: { x: 0, y: -1, z: 0 }, col: '#1484e6', lbl: '-Re', neg: true },
-        // Z is Im - Use Grey to match Plot Color
-        { vec: { x: 0, y: 0, z: 1 }, col: '#999', lbl: 'Im', neg: false },
-        { vec: { x: 0, y: 0, z: -1 }, col: '#999', lbl: '-Im', neg: true }
+        // Z is Im - Use Green to match Plot Color
+        { vec: { x: 0, y: 0, z: 1 }, col: '#80e535', lbl: 'Im', neg: false },
+        { vec: { x: 0, y: 0, z: -1 }, col: '#80e535', lbl: '-Im', neg: true }
     ];
 
     // Project All
@@ -2009,6 +2047,9 @@ function drawRIPlot(ctx, windingPoints, comRe, comIm, canvas, fft, maxFreq, N_FF
         ctx.fillStyle = '#1484e6';
         ctx.arc(tx, ty, 4, 0, Math.PI * 2);
         ctx.fill();
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 2;
+        ctx.stroke();
     }
 
     const dF = state.sampleRate / N_FFT;
@@ -2042,6 +2083,9 @@ function drawRIPlot(ctx, windingPoints, comRe, comIm, canvas, fft, maxFreq, N_FF
     ctx.fillStyle = '#000000';
     ctx.arc(comX, comY, 5, 0, Math.PI * 2);
     ctx.fill();
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 2;
+    ctx.stroke();
     ctx.beginPath();
     ctx.strokeStyle = 'rgba(20, 132, 230, 0.5)';
     ctx.moveTo(cx, cy);
@@ -2116,15 +2160,15 @@ function drawAbsTransform(ctx, fft, canvas, maxFreq, N_FFT) {
             ctx.stroke();
 
             ctx.beginPath();
-            ctx.strokeStyle = 'rgba(100, 100, 100, 0.4)';
+            ctx.strokeStyle = 'rgba(128, 229, 53, 0.5)';
             drawSpline(ctx, ptsIm, state.fftSmoothing);
             ctx.stroke();
         }
 
         if (pts.length > 0) {
             ctx.beginPath();
-            ctx.strokeStyle = '#1484e6';
-            ctx.fillStyle = 'rgba(20, 132, 230, 0.1)';
+            ctx.strokeStyle = '#000000';
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
             drawSpline(ctx, pts, state.fftSmoothing);
             ctx.stroke();
         }
@@ -2132,7 +2176,7 @@ function drawAbsTransform(ctx, fft, canvas, maxFreq, N_FFT) {
         const selX = ((state.selectedFrequency - startF) / freqRange) * w;
         if (selX >= 0 && selX <= w) {
             ctx.beginPath();
-            ctx.strokeStyle = '#1484e6';
+            ctx.strokeStyle = '#000000';
             ctx.lineWidth = 1;
             ctx.setLineDash([5, 5]);
             ctx.moveTo(selX, 0);
@@ -2146,9 +2190,12 @@ function drawAbsTransform(ctx, fft, canvas, maxFreq, N_FFT) {
             if (ptIdx >= 0 && ptIdx < pts.length) closestY = pts[ptIdx].y;
 
             ctx.beginPath();
-            ctx.fillStyle = '#1484e6';
+            ctx.fillStyle = '#000000';
             ctx.arc(selX, closestY, 4, 0, Math.PI * 2);
             ctx.fill();
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 2;
+            ctx.stroke();
         }
     }
 }
