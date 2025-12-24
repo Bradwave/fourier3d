@@ -2299,4 +2299,52 @@ function generateAudioBuffer() {
     return buffer;
 }
 
+window.exportComponents = () => {
+    const data = JSON.stringify(state.components, null, 2);
+    const blob = new Blob([data], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'fourier_components.json';
+    a.click();
+    URL.revokeObjectURL(url);
+};
+
+window.triggerImport = () => {
+    document.getElementById('import-file').click();
+};
+
+window.importComponents = (input) => {
+    const file = input.files[0];
+    if (!file) return;
+    
+    if (state.components.length > 0) {
+        if (!confirm("This will replace all current signal components. Are you sure?")) {
+            input.value = ''; 
+            return;
+        }
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        try {
+            const data = JSON.parse(e.target.result);
+            if (Array.isArray(data)) {
+                state.components = data.map(c => {
+                    if (!c.id) c.id = Math.random().toString(36).substr(2, 9);
+                    return c;
+                });
+                renderComponentsUI();
+                saveState();
+            } else {
+                alert("Invalid file format: format needs to be an array of component objects.");
+            }
+        } catch (err) {
+            alert("Error parsing JSON: " + err.message);
+        }
+    };
+    reader.readAsText(file);
+    input.value = ''; 
+};
+
 init();

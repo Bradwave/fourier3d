@@ -172,6 +172,24 @@
 
             <div class="spacer-flex"></div> <!-- Spacer to push Reset down -->
 
+            <!-- Import / Export (Collapsible) -->
+            <div class="section-header-collapsible" data-target="io-wrapper">
+                <div class="section-title section-title-clean">Import / Export Signal</div>
+                <span class="material-symbols-outlined dropdown-icon">expand_more</span>
+            </div>
+
+            <div id="io-wrapper" class="collapsible-content expanded">
+                <div class="collapsible-inner">
+                    <button class="secondary btn-full-width" onclick="exportComponents()">
+                        <span class="material-symbols-outlined">download</span> EXPORT
+                    </button>
+                    <button class="secondary btn-full-width" style="margin-top: 8px;" onclick="triggerImport()">
+                        <span class="material-symbols-outlined">upload</span> IMPORT
+                    </button>
+                    <input type="file" id="import-file" style="display: none;" accept=".json" onchange="importComponents(this)">
+                </div>
+            </div>
+
             <!-- About / Info (Collapsible) -->
             <div class="section-header-collapsible sec-margin-top" data-target="about-wrapper">
                 <div class="section-title section-title-clean">About Fourier 3D</div>
