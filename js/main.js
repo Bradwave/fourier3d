@@ -12,6 +12,7 @@ class SignalComponent {
             gaussian: { center: 0.5, width: 0.2 },
             adsr: { a: 0.1, d: 0.1, s: 0.5, r: 0.2 }
         };
+        this.phase = 0;
     }
 }
 
@@ -886,8 +887,15 @@ window.updateComponent = (id, prop, value) => {
     const c = state.components.find(x => x.id === id);
     if (c) {
         c[prop] = parseFloat(value);
-        document.getElementById((prop === 'freq' ? 'f-val-' : 'a-val-') + id).innerText = value + (prop === 'freq' ? ' Hz' : '');
+        const valElem = document.getElementById((prop === 'freq' ? 'f-val-' : (prop === 'amp' ? 'a-val-' : 'p-val-')) + id);
+        if (valElem) {
+            let label = value;
+            if (prop === 'freq') label += ' Hz';
+            else if (prop === 'phase') label = parseFloat(value).toFixed(2) + ' rad';
+            valElem.innerText = label;
+        }
         drawComponentPreview(document.getElementById(`preview-${c.id}`), c);
+        drawEnvelopePreview(document.getElementById(`env-prev-${c.id}`), c);
         saveState();
     }
 };
@@ -958,7 +966,62 @@ function renderComponentsUI() {
     state.components.forEach((comp, index) => {
         const el = document.createElement('div');
         el.className = 'component-row';
-        el.innerHTML = `<div class="component-header"><span>WAVE ${index + 1}</span><span class="material-symbols-outlined remove-btn" style="font-size: 16px;" onclick="removeComponent(${index})">close</span></div><div class="component-body"><div class="component-controls"><div class="component-control-item"><div class="component-slider-wrapper"><span class="component-label">FREQ</span><input type="range" class="compact-range" value="${comp.freq}" min="0.5" max="50" step="0.5" oninput="updateComponent('${comp.id}', 'freq', this.value)"></div><div id="f-val-${comp.id}" class="component-value">${comp.freq} Hz</div></div><div class="component-control-item"><div class="component-slider-wrapper"><span class="component-label">AMP</span><input type="range" class="compact-range" value="${comp.amp}" min="0" max="2" step="0.1" oninput="updateComponent('${comp.id}', 'amp', this.value)"></div><div id="a-val-${comp.id}" class="component-value">${comp.amp}</div></div></div><div class="component-preview-wrapper"><canvas id="preview-${comp.id}" width="100" height="28"></canvas></div><div style="margin-top: 8px;"><div class="component-label" id="time-label-${comp.id}">TIME (${comp.startTime.toFixed(2)}s - ${comp.endTime.toFixed(2)}s)</div><div class="double-slider-wrapper"><div class="double-slider-track"></div><div class="double-slider-fill" style="left: ${(comp.startTime / 5.0) * 100}%; width: ${((comp.endTime - comp.startTime) / 5.0) * 100}%"></div><input type="range" class="double-slider-input" min="0" max="5" step="0.1" value="${comp.startTime}" oninput="updateTimeConstraint('${comp.id}', 'start', this.value)"><input type="range" class="double-slider-input" min="0" max="5" step="0.1" value="${comp.endTime}" oninput="updateTimeConstraint('${comp.id}', 'end', this.value)"></div></div><div class="envelope-section"><div class="envelope-header"><span class="component-label">ENVELOPE</span><div class="segmented-control" style="margin: 0; width: 120px; transform: scale(0.9);"><div class="segmented-option ${comp.envelopeType === 'gaussian' ? 'active' : ''}" onclick="setEnvelopeType('${comp.id}', 'gaussian')">GAUSS</div><div class="segmented-option ${comp.envelopeType === 'adsr' ? 'active' : ''}" onclick="setEnvelopeType('${comp.id}', 'adsr')">ADSR</div></div></div><canvas class="envelope-preview" id="env-prev-${comp.id}" width="200" height="80"></canvas><div class="envelope-params">${getEnvelopeControls(comp)}</div></div></div>`;
+        const pf = (Math.PI / 16);
+        el.innerHTML = `
+            <div class="component-header">
+                <span>WAVE ${index + 1}</span>
+                <span class="material-symbols-outlined remove-btn" style="font-size: 16px;" onclick="removeComponent(${index})">close</span>
+            </div>
+            <div class="component-body">
+                <div class="component-controls" style="display: flex; flex-direction: column; gap: 8px;">
+                    <!-- Frequency Row -->
+                    <div class="component-control-item" style="width: 100%;">
+                        <div class="component-slider-wrapper">
+                            <span class="component-label">FREQ</span>
+                            <input type="range" class="compact-range" value="${comp.freq}" min="0.5" max="50" step="0.5" oninput="updateComponent('${comp.id}', 'freq', this.value)">
+                        </div>
+                        <div id="f-val-${comp.id}" class="component-value">${comp.freq} Hz</div>
+                    </div>
+                    <!-- Amp & Phase Row -->
+                    <div style="display: flex; gap: 12px;">
+                        <div class="component-control-item" style="flex: 1;">
+                            <div class="component-slider-wrapper">
+                                <span class="component-label">AMP</span>
+                                <input type="range" class="compact-range" value="${comp.amp}" min="0" max="2" step="0.1" oninput="updateComponent('${comp.id}', 'amp', this.value)">
+                            </div>
+                            <div id="a-val-${comp.id}" class="component-value">${comp.amp}</div>
+                        </div>
+                        <div class="component-control-item" style="flex: 1;">
+                            <div class="component-slider-wrapper">
+                                <span class="component-label">PHASE</span>
+                                <input type="range" class="compact-range" value="${comp.phase || 0}" min="0" max="${(2 * Math.PI).toFixed(4)}" step="${pf.toFixed(4)}" oninput="updateComponent('${comp.id}', 'phase', this.value)">
+                            </div>
+                            <div id="p-val-${comp.id}" class="component-value">${(comp.phase || 0).toFixed(2)} rad</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="component-preview-wrapper"><canvas id="preview-${comp.id}" width="100" height="28"></canvas></div>
+                <div style="margin-top: 8px;">
+                    <div class="component-label" id="time-label-${comp.id}">TIME (${comp.startTime.toFixed(2)}s - ${comp.endTime.toFixed(2)}s)</div>
+                    <div class="double-slider-wrapper">
+                        <div class="double-slider-track"></div>
+                        <div class="double-slider-fill" style="left: ${(comp.startTime / 5.0) * 100}%; width: ${((comp.endTime - comp.startTime) / 5.0) * 100}%"></div>
+                        <input type="range" class="double-slider-input" min="0" max="5" step="0.1" value="${comp.startTime}" oninput="updateTimeConstraint('${comp.id}', 'start', this.value)">
+                        <input type="range" class="double-slider-input" min="0" max="5" step="0.1" value="${comp.endTime}" oninput="updateTimeConstraint('${comp.id}', 'end', this.value)">
+                    </div>
+                </div>
+                <div class="envelope-section">
+                    <div class="envelope-header">
+                        <span class="component-label">ENVELOPE</span>
+                        <div class="segmented-control" style="margin: 0; width: 120px; transform: scale(0.9);">
+                            <div class="segmented-option ${comp.envelopeType === 'gaussian' ? 'active' : ''}" onclick="setEnvelopeType('${comp.id}', 'gaussian')">GAUSS</div>
+                            <div class="segmented-option ${comp.envelopeType === 'adsr' ? 'active' : ''}" onclick="setEnvelopeType('${comp.id}', 'adsr')">ADSR</div>
+                        </div>
+                    </div>
+                    <canvas class="envelope-preview" id="env-prev-${comp.id}" width="200" height="80"></canvas>
+                    <div class="envelope-params">${getEnvelopeControls(comp)}</div>
+                </div>
+            </div>`;
         elements.componentsContainer.appendChild(el);
         drawComponentPreview(document.getElementById(`preview-${comp.id}`), comp);
         drawEnvelopePreview(document.getElementById(`env-prev-${comp.id}`), comp);
@@ -990,7 +1053,7 @@ function drawComponentPreview(canvas, comp) {
     ctx.moveTo(0, r.height / 2);
     for (let x = 0; x <= r.width; x++) {
         const t = (x / r.width) * 1.0;
-        const val = comp.amp * Math.sin(2 * Math.PI * comp.freq * t);
+        const val = comp.amp * Math.cos(2 * Math.PI * comp.freq * t + (comp.phase || 0));
         ctx.lineTo(x, r.height / 2 - (val / 2.5) * (r.height / 2));
     }
     ctx.stroke();
@@ -1007,11 +1070,30 @@ function drawEnvelopePreview(canvas, comp) {
     const w = r.width,
         h = r.height;
     ctx.clearRect(0, 0, w, h);
+    
+    // Background Line
     ctx.beginPath();
     ctx.strokeStyle = '#eee';
     ctx.moveTo(0, h);
     ctx.lineTo(w, h);
     ctx.stroke();
+
+    // Enveloped Wave Preview (Transparent Light Blue)
+    ctx.beginPath();
+    ctx.strokeStyle = 'rgba(135, 206, 250, 0.4)';
+    ctx.lineWidth = 1;
+    for (let x = 0; x <= w; x++) {
+        const t = x / w;
+        const env = getEnvelopeValue(t, comp.envelopeType, comp.envelopeParams);
+        const carrier = Math.cos(2 * Math.PI * comp.freq * t + (comp.phase || 0));
+        const val = Math.abs(carrier) * env; 
+        const y = h - (val * h * 0.9) - 2;
+        if (x === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+
+    // Envelope Curve
     ctx.beginPath();
     ctx.strokeStyle = '#1484e6';
     ctx.lineWidth = 2;
@@ -1051,12 +1133,12 @@ function getSignalValueAt(t) {
             const tNorm = (t - comp.startTime) / duration;
             ampOffset = getEnvelopeValue(tNorm, comp.envelopeType, comp.envelopeParams);
         }
-        val += comp.amp * Math.cos(2 * Math.PI * comp.freq * t) * ampOffset;
+        val += comp.amp * Math.cos(2 * Math.PI * comp.freq * t + (comp.phase || 0)) * ampOffset;
     });
     return val;
 }
 
-const fftBitRev = new Uint32Array(16384); // Pre-allocate bit reversal table
+let fftBitRev = new Uint32Array(16384); // Pre-allocate bit reversal table
 let fftBitRevN = 0;
 
 function fft(data, bufferLike, len) {
@@ -1069,6 +1151,9 @@ function fft(data, bufferLike, len) {
     // Check/Update Bit Reversal Table
     if (N !== fftBitRevN) {
         fftBitRevN = N;
+        if (N > fftBitRev.length) {
+            fftBitRev = new Uint32Array(N);
+        }
         const bits = Math.log2(N);
         for (let i = 0; i < N; i++) {
             let n = i;
@@ -1089,6 +1174,12 @@ function fft(data, bufferLike, len) {
     for (let i = 0; i < N; i++) {
         const rev = fftBitRev[i];
         const d = data[rev];
+        if (!d) {
+             // Handle overlap/padding error gracefully
+             if (bufferLike) { output[i].re = 0; output[i].im = 0; }
+             else output[i] = {re:0, im:0};
+             continue;
+        }
         if (bufferLike) {
             output[i].re = d.re;
             output[i].im = d.im;
@@ -1215,35 +1306,43 @@ function animate() {
     if (state.view3d.hasInteracted && elements.hints.view3d) elements.hints.view3d.style.opacity = 0;
     if (state.viewRI.hasInteracted && elements.hints.viewRI) elements.hints.viewRI.style.opacity = 0;
 
-    // Reuse complexSignal buffer
-    const complexSignal = ensureObjectArray(state.buffers.complexSignal, N_FFT, () => ({ re: 0, im: 0 }));
+    // Calculate Double Sampling Size & Max Buffer
+    const N_FFT_RI = N_FFT * 2;
+    const N_MAX = Math.max(N_FFT, N_FFT_RI);
 
+    // Reuse complexSignal buffer - Ensure large enough for biggest FFT
+    const complexSignal = ensureObjectArray(state.buffers.complexSignal, N_MAX, () => ({ re: 0, im: 0 }));
+
+    // Reuse displaySignal buffer
+    const displaySignal = ensureObjectArray(state.buffers.displaySignal, N_Base, () => ({ t: 0, val: 0 }));
+    
+    // Fill Signal Data (Time Domain)
     for (let i = 0; i < N_Base; i++) {
         const t = i / state.sampleRate;
         // Update in-place
         complexSignal[i].re = getSignalValueAt(t);
         complexSignal[i].im = 0;
-    }
-    for (let i = N_Base; i < N_FFT; i++) {
-        complexSignal[i].re = 0;
-        complexSignal[i].im = 0;
-    }
-
-    // Use full buffer with explicit length to avoid slicing allocation
-    if (!state.buffers.fftOutput) state.buffers.fftOutput = [];
-    const fftOutBuf = ensureObjectArray(state.buffers.fftOutput, N_FFT, () => ({ re: 0, im: 0 }));
-
-    // fftResult aliases fftBuffer
-    // complexSignal is passed directly (no slice)
-    let fftResult = fft(complexSignal, fftOutBuf, N_FFT);
-
-    // Reuse displaySignal buffer
-    const displaySignal = ensureObjectArray(state.buffers.displaySignal, N_Base, () => ({ t: 0, val: 0 }));
-    for (let i = 0; i < N_Base; i++) {
-        displaySignal[i].t = i / state.sampleRate;
+        
+        displaySignal[i].t = t;
         displaySignal[i].val = complexSignal[i].re;
     }
+    
+    // Zero-fill padding area 
+    for(let i = N_Base; i < N_MAX; i++) {
+        complexSignal[i].re = 0; complexSignal[i].im = 0;
+    }
     lastSignalData = displaySignal; // Reference
+
+    // 1. Standard FFT for 3D Plot & Abs Plot
+    if (!state.buffers.fftOutput) state.buffers.fftOutput = [];
+    const fftOutBuf = ensureObjectArray(state.buffers.fftOutput, N_FFT, () => ({ re: 0, im: 0 }));
+    let fftResult = fft(complexSignal, fftOutBuf, N_FFT);
+
+    // 2. High-Res FFT for RI Plot (Winding)
+    if (!state.buffers.fftOutputRI) state.buffers.fftOutputRI = [];
+    const fftOutBufRI = ensureObjectArray(state.buffers.fftOutputRI, N_FFT_RI, () => ({ re: 0, im: 0 }));
+    // Note: complexSignal is already prepared and zero-padded implicitly beyond N_Base
+    let fftResultRI = fft(complexSignal, fftOutBufRI, N_FFT_RI);
 
     // Winding
     // We can't easily reuse windingPoints because it's re-created here.
@@ -1257,7 +1356,7 @@ function animate() {
     {
         const val = getSignalValueAt(state.selectedTime);
         const angle = 2 * Math.PI * state.selectedFrequency * state.selectedTime;
-        selectedTimePoint = { re: val * Math.cos(angle), im: val * Math.sin(angle) };
+        selectedTimePoint = { re: val * Math.cos(angle), im: -val * Math.sin(angle) };
     }
 
     for (let i = 0; i <= numSteps; i++) {
@@ -1266,7 +1365,7 @@ function animate() {
         const angle = 2 * Math.PI * state.selectedFrequency * t;
         windingPoints.push({
             re: val * Math.cos(angle),
-            im: val * Math.sin(angle)
+            im: -val * Math.sin(angle)
         });
     }
 
@@ -1291,7 +1390,8 @@ function animate() {
 
     drawSignalPlot(elements.ctx.signal, displaySignal, elements.canvases.signal);
     draw3DPlot(elements.ctx.transform3d, fftResult, elements.canvases.transform3d, maxDisplayFreq, N_FFT);
-    drawRIPlot(elements.ctx.ri, windingPoints, comRe, comIm, elements.canvases.ri, fftResult, maxDisplayFreq, N_FFT, selectedTimePoint);
+    // Use High Res FFT for RI Plot
+    drawRIPlot(elements.ctx.ri, windingPoints, comRe, comIm, elements.canvases.ri, fftResultRI, maxDisplayFreq, N_FFT_RI, selectedTimePoint);
     drawAbsTransform(elements.ctx.abs, fftResult, elements.canvases.abs, maxDisplayFreq, N_FFT);
 }
 
@@ -1583,32 +1683,27 @@ function draw3DPlot(ctx, fft, canvas, maxFreq, N_FFT) {
         const scaleFactor = (N_Base / 2);
         const re = fft[k].re / scaleFactor;
         const im = fft[k].im / scaleFactor;
-        // Swap: y=im, z=re
-        pts.push(project3D(x, im, re, cx, cy, scale));
+        
+        // Corrected: y=re, z=im
+        // Inverted Z (Im) to match RI plot direction (cy + im)
+        pts.push(project3D(x, re, -im, cx, cy, scale));
 
-        // pReal: Shows Re component. Previously (x, re, 0). Now if Re is Z-axis, should it be (x, 0, re)? 
-        // Logic check: pReal usually shows the projection on the Real Plane. 
-        // Previously Re was on Y-axis. Now Re is on Z-axis.
-        // So pReal should have Y=0. -> project3D(x, 0, re)
-        pReal.push(project3D(x, 0, re, cx, cy, scale));
+        // pReal: Shows Re component on Y axis. Project onto Z=0.
+        pReal.push(project3D(x, re, 0, cx, cy, scale));
 
-        // pImag: Shows Im component. Previously (x, 0, im). Now Im is on Y-axis.
-        // So pImag should have Z=0 -> project3D(x, im, 0)
-        pImag.push(project3D(x, im, 0, cx, cy, scale));
+        // pImag: Shows Im component on Z axis. Project onto Y=0.
+        // We project -im to Z axis.
+        pImag.push(project3D(x, 0, -im, cx, cy, scale));
 
         // Wall Projections
-        // Wall is usually "behind" the graph. 
-        // Old ReWall: (x, re, -1) [Im fixed at back]
-        // Old ImWall: (x, -1, im) [Re fixed at bottom]
-
-        // New: Re is Z. Im is Y.
-        // ReWall (Back Plane in Z): Fix Im at -1 (Bottom)? Or back?
-        // Let's fix the OTHER axis to -1.
-        // To show Re curve, we project onto a plane where Im is constant. -> (x, -1, re) (Im=-1)
-        // To show Im curve, we project onto a plane where Re is constant. -> (x, im, -1) (Re=-1)
+        // ReWall: Re is Y. Project onto Z=-1 (Back Plane)
+        // ImWall: Im is Z. Project onto Y=-1 (Bottom Plane)
         if (state.showReIm) {
-            pRealWall.push(project3D(x, -1, re, cx, cy, scale));
-            pImagWall.push(project3D(x, im, -1, cx, cy, scale));
+            pRealWall.push(project3D(x, re, -1, cx, cy, scale));
+            // Im is mapped to Z. If Z=-im. 
+            // We want to project Im onto a plane. 
+            // If we project onto Y=-1 (Bottom).
+            pImagWall.push(project3D(x, -1, -im, cx, cy, scale));
         }
     }
 
@@ -1762,12 +1857,12 @@ function drawGizmo(ctx, w, h) {
     const axes = [
         { vec: { x: 1, y: 0, z: 0 }, col: '#ff3e3e', lbl: 'w', neg: false },
         { vec: { x: -1, y: 0, z: 0 }, col: '#ff3e3e', lbl: '', neg: true },
-        // Y is Im
-        { vec: { x: 0, y: 1, z: 0 }, col: '#80e535', lbl: 'Re', neg: false },
-        { vec: { x: 0, y: -1, z: 0 }, col: '#80e535', lbl: '-Re', neg: true },
-        // Z is Re
-        { vec: { x: 0, y: 0, z: 1 }, col: '#3b7af5', lbl: 'Im', neg: false },
-        { vec: { x: 0, y: 0, z: -1 }, col: '#3b7af5', lbl: '-Im', neg: true }
+        // Y is Re - Use Blue to match Plot Color
+        { vec: { x: 0, y: 1, z: 0 }, col: '#1484e6', lbl: 'Re', neg: false },
+        { vec: { x: 0, y: -1, z: 0 }, col: '#1484e6', lbl: '-Re', neg: true },
+        // Z is Im - Use Grey to match Plot Color
+        { vec: { x: 0, y: 0, z: 1 }, col: '#999', lbl: 'Im', neg: false },
+        { vec: { x: 0, y: 0, z: -1 }, col: '#999', lbl: '-Im', neg: true }
     ];
 
     // Project All
@@ -1839,12 +1934,12 @@ function snapViewTo(vec) {
     // Let's hardcode the 6 canonical views for simplicity and stability
     let target = { rx: 0, ry: 0, rz: 0 };
 
-    if (vec.x === 1) target = { rx: 0, ry: Math.PI / 2, rz: 0 }; // Right (w) -> View Re-Im Plane. Re Right, Im Up.
+    if (vec.x === 1) target = { rx: -Math.PI / 2, ry: 0, rz: -Math.PI / 2 }; // Right (w)
     else if (vec.x === -1) target = { rx: 0, ry: -Math.PI / 2, rz: 0 }; // Left
-    else if (vec.y === 1) target = { rx: -Math.PI / 2, ry: 0, rz: 0 }; // Top (Im)
-    else if (vec.y === -1) target = { rx: Math.PI / 2, ry: 0, rz: 0 }; // Bottom
-    else if (vec.z === 1) target = { rx: 0, ry: 0, rz: 0 }; // Front (Re)
-    else if (vec.z === -1) target = { rx: 0, ry: Math.PI, rz: 0 }; // Back
+    else if (vec.y === 1) target = { rx: -Math.PI / 2, ry: 0, rz: 0 }; // Top (Re) -> Swapped to match user expectation
+    else if (vec.y === -1) target = { rx: 0, ry: Math.PI, rz: 0 }; // Bottom
+    else if (vec.z === 1) target = { rx: 0, ry: 0, rz: 0 }; // Im -> Swapped to match user expectation
+    else if (vec.z === -1) target = { rx: Math.PI / 2, ry: 0, rz: 0 }; // Back Im
 
     // Animate
     state.view3d.target = target;
@@ -1888,12 +1983,17 @@ function drawRIPlot(ctx, windingPoints, comRe, comIm, canvas, fft, maxFreq, N_FF
         ctx.moveTo(0, cy);
         ctx.lineTo(w, cy);
         ctx.stroke();
+
+        ctx.font = 'bold 12px monospace';
+        ctx.fillStyle = '#aaa';
+        ctx.fillText('Re', w - 20, cy - 6);
+        ctx.fillText('Im', cx + 6, 12);
     }
 
     const displayScale = scale * 0.5;
     const mappedWinding = windingPoints.map(p => ({
         x: cx + p.re * displayScale,
-        y: cy - p.im * displayScale
+        y: cy + p.im * displayScale
     }));
 
     ctx.beginPath();
@@ -1904,7 +2004,7 @@ function drawRIPlot(ctx, windingPoints, comRe, comIm, canvas, fft, maxFreq, N_FF
 
     if (timePoint) {
         const tx = cx + timePoint.re * displayScale;
-        const ty = cy - timePoint.im * displayScale;
+        const ty = cy + timePoint.im * displayScale;
         ctx.beginPath();
         ctx.fillStyle = '#1484e6';
         ctx.arc(tx, ty, 4, 0, Math.PI * 2);
@@ -1923,7 +2023,7 @@ function drawRIPlot(ctx, windingPoints, comRe, comIm, canvas, fft, maxFreq, N_FF
         const im = fft[k].im / scaleFactor;
         comPts.push({
             x: cx + re * displayScale,
-            y: cy - im * displayScale
+            y: cy + im * displayScale // Flipped Im
         });
     }
 
@@ -1936,7 +2036,7 @@ function drawRIPlot(ctx, windingPoints, comRe, comIm, canvas, fft, maxFreq, N_FF
     ctx.setLineDash([]);
 
     const comX = cx + comRe * displayScale;
-    const comY = cy - comIm * displayScale;
+    const comY = cy + comIm * displayScale; // Flipped Im
 
     ctx.beginPath();
     ctx.fillStyle = '#000000';
@@ -2004,7 +2104,8 @@ function drawAbsTransform(ctx, fft, canvas, maxFreq, N_FFT) {
 
             if (state.showReIm) {
                 ptsRe.push({ x, y: yZero - (fft[k].re / (N_Base / 2)) * yScale });
-                ptsIm.push({ x, y: yZero - (fft[k].im / (N_Base / 2)) * yScale });
+                // Inverted Im: Add instead of subtract to go Down
+                ptsIm.push({ x, y: yZero + (fft[k].im / (N_Base / 2)) * yScale });
             }
         }
 
@@ -2131,7 +2232,7 @@ function generateAudioBuffer() {
         const t = i / sr; // Audio Time
         let val = 0;
         state.components.forEach(comp => {
-            let compVal = comp.amp * Math.cos(2 * Math.PI * (comp.freq * K) * t);
+            let compVal = comp.amp * Math.cos(2 * Math.PI * (comp.freq * K) * t + (comp.phase || 0));
 
             // Apply envelope (Always 'real' mode effectively in this app logic)
             if (t < comp.startTime || t > comp.endTime) {
