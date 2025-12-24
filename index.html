@@ -73,6 +73,16 @@
 
             <div id="visualization-wrapper" class="collapsible-content expanded">
                 <div class="collapsible-inner">
+
+                    <div class="control-group">
+                        <div class="control-label">Global amp multiplier (x<span id="global-amp-display">1.0</span>)
+                        </div>
+                        <input type="range" id="global-amp-slider" min="0" max="5" value="1" step="0.1">
+                        <div class="control-description">
+                            Multiplies amplitude of all components. Does not affect audio.
+                        </div>
+                    </div>
+
                     <!-- Ranges -->
                     <div class="control-group control-group-spaced">
                         <div class="control-label" id="display-segment-label">Displayed time (0.00s - 5.00s)</div>
@@ -97,11 +107,6 @@
                             <input type="range" class="double-slider-input" id="freq-end-input" min="0" max="100"
                                 step="0.5" value="100" oninput="updateFreqSegment('end', this.value)">
                         </div>
-                    </div>
-
-                    <div class="control-group">
-                        <div class="control-label">Global amp multiplier (x<span id="global-amp-display">1.0</span>)</div>
-                        <input type="range" id="global-amp-slider" min="0" max="5" value="1" step="0.1">
                     </div>
 
                     <!-- Display Toggles -->
@@ -186,7 +191,8 @@
                     <button class="secondary btn-full-width" style="margin-top: 8px;" onclick="triggerImport()">
                         <span class="material-symbols-outlined">upload</span> IMPORT
                     </button>
-                    <input type="file" id="import-file" style="display: none;" accept=".json" onchange="importComponents(this)">
+                    <input type="file" id="import-file" style="display: none;" accept=".json"
+                        onchange="importComponents(this)">
                 </div>
             </div>
 

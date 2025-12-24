@@ -185,6 +185,7 @@ function saveState() {
         components: state.components,
         signalMode: state.signalMode,
         audioMultiplier: state.audioMultiplier,
+        ampMultiplier: state.ampMultiplier,
         selectedFrequency: state.selectedFrequency,
         zoomStart: state.zoomStart,
         zoomEnd: state.zoomEnd,
@@ -215,6 +216,7 @@ function loadState() {
                 return n;
             });
             if (parsed.audioMultiplier) state.audioMultiplier = parsed.audioMultiplier;
+            if (parsed.ampMultiplier !== undefined) state.ampMultiplier = Number(parsed.ampMultiplier);
             if (parsed.selectedFrequency) state.selectedFrequency = parsed.selectedFrequency;
             if (parsed.selectedTime !== undefined) state.selectedTime = parsed.selectedTime;
             if (parsed.zoomStart !== undefined) state.zoomStart = parsed.zoomStart;
