@@ -20,14 +20,16 @@
     --color-bg: #ffffff;
     --color-bg-panel: #ffffff;
     --color-bg-track: #f7f9fb;
-    
+
     --color-text-main: #1a1a1a;
     --color-text-muted: #555555;
-    
-    --color-accent: #1484e6;        /* Main Blue */
-    --color-accent-dark: #0f6cb8;   /* Darker Blue */
+
+    --color-accent: #1484e6;
+    /* Main Blue */
+    --color-accent-dark: #0f6cb8;
+    /* Darker Blue */
     --color-border: #e0e0e0;
-    
+
     --color-signal: #1a1a1a;
     --color-filtered: #1484e6;
     --color-filter-window: rgba(20, 132, 230, 0.15);
@@ -61,13 +63,16 @@ body {
     width: 6px;
     height: 6px;
 }
+
 ::-webkit-scrollbar-track {
     background: transparent;
 }
+
 ::-webkit-scrollbar-thumb {
     background: var(--color-border);
     border-radius: 4px;
 }
+
 ::-webkit-scrollbar-thumb:hover {
     background: var(--color-text-muted);
 }
@@ -77,7 +82,8 @@ body {
    ---------------------------------------------------------------------- */
 .app-container {
     display: grid;
-    grid-template-columns: 380px 1fr; /* Larger sidebar */
+    grid-template-columns: 380px 1fr;
+    /* Larger sidebar */
     width: 100%;
     height: 100%;
 }
@@ -89,7 +95,8 @@ body.focus-mode #ri-plot-container {
 }
 
 body.focus-mode .split-plot-row {
-    flex: 4 !important; /* give 3d plot more vertical space */
+    flex: 4 !important;
+    /* give 3d plot more vertical space */
 }
 
 /* Ensure 3D plot takes full width when RI is hidden */
@@ -109,7 +116,7 @@ body.focus-mode #transform-3d-container {
     gap: 16px;
     overflow-y: auto;
     z-index: 10;
-    box-shadow: 4px 0 12px rgba(0,0,0,0.02);
+    box-shadow: 4px 0 12px rgba(0, 0, 0, 0.02);
 }
 
 .sidebar.hidden {
@@ -120,9 +127,11 @@ body.focus-mode #transform-3d-container {
 body.sidebar-collapsed .app-container {
     grid-template-columns: 0px 1fr;
 }
+
 body.sidebar-collapsed .sidebar {
-    display: none; 
+    display: none;
 }
+
 body.sidebar-collapsed .plots-wrapper {
     width: 100vw;
 }
@@ -190,7 +199,7 @@ header p {
 .collapsible-content.expanded {
     display: flex;
     flex-direction: column;
-    overflow: visible; 
+    overflow: visible;
 }
 
 .collapsible-inner {
@@ -198,27 +207,28 @@ header p {
     flex-direction: column;
     gap: 16px;
     padding: 2px;
-    padding-bottom: 6px; 
+    padding-bottom: 6px;
 }
 
 /* Sidebar Toggle Button */
 #toggle-sidebar-btn {
     position: fixed;
-    left: 380px; /* Default sidebar width */
+    left: 380px;
+    /* Default sidebar width */
     top: 50%;
     transform: translateY(-50%);
     z-index: 100;
-    width: 12px; 
-    padding: 0; 
+    width: 12px;
+    padding: 0;
     height: 48px;
     border-top-left-radius: 0;
     border-bottom-left-radius: 0;
     border-top-right-radius: 4px;
     border-bottom-right-radius: 4px;
     background: white;
-    box-shadow: 2px 0 8px rgba(0,0,0,0.05);
+    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.05);
     border: 1px solid var(--color-border);
-    border-left: none; 
+    border-left: none;
     cursor: pointer;
     display: flex;
     justify-content: center;
@@ -228,18 +238,18 @@ header p {
 }
 
 #toggle-sidebar-btn span {
-    font-size: 16px; 
-    margin-left: -2px; 
+    font-size: 16px;
+    margin-left: -2px;
     font-weight: bold;
 }
 
 /* When sidebar hidden (Desktop) */
 body.sidebar-collapsed #toggle-sidebar-btn {
-    left: 0; 
+    left: 0;
     border-radius: 0 4px 4px 0;
-    border-left: none; 
+    border-left: none;
     border-right: 1px solid var(--color-border);
-    box-shadow: 2px 0 8px rgba(0,0,0,0.1);
+    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
 }
 
 #toggle-sidebar-btn:hover {
@@ -261,9 +271,9 @@ body.sidebar-collapsed #toggle-sidebar-btn {
 }
 
 .control-group-row {
-    flex-direction: row; 
-    justify-content: space-between; 
-    align-items: center; 
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
     margin-top: 8px;
 }
 
@@ -274,9 +284,9 @@ body.sidebar-collapsed #toggle-sidebar-btn {
 }
 
 .control-description {
-    font-size: 0.65rem; 
-    color: #888; 
-    margin-top: 4px; 
+    font-size: 0.65rem;
+    color: #888;
+    margin-top: 4px;
     line-height: 1.2;
 }
 
@@ -296,6 +306,7 @@ input[type="range"] {
     border-radius: 2px;
     outline: none;
 }
+
 input[type="range"]::-webkit-slider-thumb {
     -webkit-appearance: none;
     width: 14px;
@@ -305,6 +316,7 @@ input[type="range"]::-webkit-slider-thumb {
     cursor: pointer;
     transition: transform 0.1s;
 }
+
 input[type="range"]::-webkit-slider-thumb:hover {
     transform: scale(1.2);
 }
@@ -316,25 +328,45 @@ input[type="range"]::-webkit-slider-thumb:hover {
     width: 40px;
     height: 22px;
 }
-.toggle-switch input { opacity: 0; width: 0; height: 0; }
+
+.toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
 .slider {
-    position: absolute; cursor: pointer;
-    top: 0; left: 0; right: 0; bottom: 0;
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
     background-color: #ccc;
     transition: .3s;
     border-radius: 22px;
 }
+
 .slider:before {
-    position: absolute; content: "";
-    height: 16px; width: 16px;
-    left: 3px; bottom: 3px;
+    position: absolute;
+    content: "";
+    height: 16px;
+    width: 16px;
+    left: 3px;
+    bottom: 3px;
     background-color: white;
     transition: .3s;
     border-radius: 50%;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
-input:checked + .slider { background-color: var(--color-accent); }
-input:checked + .slider:before { transform: translateX(18px); }
+
+input:checked+.slider {
+    background-color: var(--color-accent);
+}
+
+input:checked+.slider:before {
+    transform: translateX(18px);
+}
 
 /* Double Slider Implementation */
 .double-slider-wrapper {
@@ -376,11 +408,11 @@ input.double-slider-input {
     left: 0;
     transform: none;
     width: 100%;
-    height: 100% !important; 
+    height: 100% !important;
     -webkit-appearance: none;
     appearance: none;
-    background: transparent !important; 
-    pointer-events: none; 
+    background: transparent !important;
+    pointer-events: none;
     z-index: 2;
     margin: 0;
     padding: 0;
@@ -399,17 +431,18 @@ input.double-slider-input::-moz-range-track {
 
 /* Thumb - Webkit */
 input.double-slider-input::-webkit-slider-thumb {
-    pointer-events: auto; 
+    pointer-events: auto;
     -webkit-appearance: none;
     appearance: none;
-    width: 8px !important; 
-    height: 18px !important; 
-    background: var(--color-accent) !important; 
+    width: 8px !important;
+    height: 18px !important;
+    background: var(--color-accent) !important;
     border: none !important;
-    border-radius: 4px !important; 
+    border-radius: 4px !important;
     cursor: col-resize;
     box-shadow: none !important;
-    margin-top: 3px !important; /* (24px - 18px) / 2 */
+    margin-top: 3px !important;
+    /* (24px - 18px) / 2 */
     position: relative;
     z-index: 10;
     transition: transform 0.1s;
@@ -418,11 +451,11 @@ input.double-slider-input::-webkit-slider-thumb {
 /* Thumb - Moz */
 input.double-slider-input::-moz-range-thumb {
     pointer-events: auto;
-    width: 8px !important; 
-    height: 18px !important; 
-    background: var(--color-accent) !important; 
+    width: 8px !important;
+    height: 18px !important;
+    background: var(--color-accent) !important;
     border: none !important;
-    border-radius: 4px !important; 
+    border-radius: 4px !important;
     cursor: col-resize;
     box-shadow: none !important;
     position: relative;
@@ -433,7 +466,7 @@ input.double-slider-input::-moz-range-thumb {
 
 input.double-slider-input::-webkit-slider-thumb:hover,
 input.double-slider-input::-moz-range-thumb:hover,
-.double-slider-input:hover::-moz-range-thumb  {
+.double-slider-input:hover::-moz-range-thumb {
     transform: scale(1.1);
 }
 
@@ -449,8 +482,9 @@ input.double-slider-input::-moz-range-thumb:hover,
     margin-bottom: 6px;
     position: relative;
     transition: all 0.2s;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
 }
+
 .component-row:hover {
     border-color: var(--color-accent);
     box-shadow: 0 2px 5px rgba(20, 132, 230, 0.1);
@@ -500,9 +534,9 @@ input.double-slider-input::-moz-range-thumb:hover,
 }
 
 .component-slider-wrapper {
-   display: flex;
-   align-items: center;
-   gap: 6px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
 }
 
 .component-preview-wrapper {
@@ -518,7 +552,7 @@ input.double-slider-input::-moz-range-thumb:hover,
 .envelope-section {
     margin-top: 12px;
     background: transparent;
-    padding: 0 4px;
+    padding: 0;
 }
 
 .envelope-header {
@@ -554,8 +588,9 @@ input.double-slider-input::-moz-range-thumb:hover,
 }
 
 .param-col input[type=range] {
-     width: 100%;
+    width: 100%;
 }
+
 .param-label {
     font-size: 0.6rem;
     color: #999;
@@ -568,8 +603,10 @@ input.double-slider-input::-moz-range-thumb:hover,
     font-size: 1.2rem;
     transition: color 0.2s;
 }
+
 .remove-btn:hover {
-    color: var(--color-accent); /* Blue on hover */
+    color: var(--color-accent);
+    /* Blue on hover */
 }
 
 /* Segmented Control */
@@ -582,10 +619,17 @@ input.double-slider-input::-moz-range-thumb:hover,
     margin-bottom: 8px;
 }
 
+.segmented-control.envelope-type-control {
+    width: 140px;
+    margin: 0;
+}
+
 .segmented-option {
     flex: 1;
     text-align: center;
     padding: 6px;
+    margin-left: 2px;
+    margin-right: 2px;
     font-size: 0.75rem;
     font-weight: 700;
     color: var(--color-text-muted);
@@ -594,14 +638,18 @@ input.double-slider-input::-moz-range-thumb:hover,
     transition: all 0.2s;
 }
 
+.envelope-type-control .segmented-option {
+    font-size: 0.7rem;
+}
+
 .segmented-option.active {
     background: white;
     color: var(--color-accent);
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .segmented-option:hover:not(.active) {
-    background: rgba(0,0,0,0.02);
+    background: rgba(0, 0, 0, 0.02);
     color: var(--color-text-main);
 }
 
@@ -627,7 +675,7 @@ input.double-slider-input::-moz-range-thumb:hover,
     border-radius: var(--radius-md);
     position: relative;
     overflow: hidden;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
 }
 
 .plot-label {
@@ -637,7 +685,7 @@ input.double-slider-input::-moz-range-thumb:hover,
     font-size: 0.65rem;
     font-weight: 700;
     color: var(--color-text-muted);
-    background: rgba(255,255,255,0.9);
+    background: rgba(255, 255, 255, 0.9);
     padding: 3px 8px;
     border-radius: 4px;
     pointer-events: none;
@@ -653,7 +701,7 @@ input.double-slider-input::-moz-range-thumb:hover,
     font-size: 0.7rem;
     font-weight: 700;
     color: var(--color-accent);
-    background: rgba(255,255,255,0.9);
+    background: rgba(255, 255, 255, 0.9);
     padding: 3px 8px;
     border-radius: 4px;
     pointer-events: none;
@@ -666,7 +714,7 @@ canvas {
     width: 100%;
     height: 100%;
     display: block;
-    touch-action: none; 
+    touch-action: none;
     user-select: none;
     -webkit-user-select: none;
 }
@@ -684,7 +732,7 @@ canvas {
     z-index: 10;
     display: flex;
     gap: 8px;
-    align-items: center; 
+    align-items: center;
     user-select: none;
     -webkit-user-select: none;
 }
@@ -698,14 +746,14 @@ canvas {
     font-size: 0.65rem;
     font-weight: 700;
     color: var(--color-accent);
-    background: rgba(255,255,255,0.9);
+    background: rgba(255, 255, 255, 0.9);
     padding: 0 8px;
     border-radius: 4px;
     border: 1px solid var(--color-border);
     text-transform: uppercase;
-    height: 24px; 
-    line-height: 22px; 
-    box-sizing: border-box; 
+    height: 24px;
+    line-height: 22px;
+    box-sizing: border-box;
     display: flex;
     align-items: center;
 }
@@ -713,17 +761,17 @@ canvas {
 .reset-view-btn {
     position: absolute;
     top: 12px;
-    right: 12px; 
-    background: rgba(255,255,255,0.9);
+    right: 12px;
+    background: rgba(255, 255, 255, 0.9);
     border: 1px solid var(--color-border);
-    border-radius: 8px; 
-    width: 24px;  
-    height: 24px; 
+    border-radius: 8px;
+    width: 24px;
+    height: 24px;
     display: flex;
     align-items: center;
     justify-content: center;
-    cursor: pointer; 
-    z-index: 20; 
+    cursor: pointer;
+    z-index: 20;
     color: var(--color-text-muted);
     transition: all 0.2s;
     box-sizing: border-box;
@@ -731,7 +779,7 @@ canvas {
 }
 
 .reset-view-btn span {
-    font-size: 18px; 
+    font-size: 18px;
 }
 
 .reset-view-btn:hover {
@@ -741,24 +789,26 @@ canvas {
 
 /* Adjust reset button position for 3D container */
 #transform-3d-container .reset-view-btn {
-    right: 48px; /* Left of fullscreen button */
-    top: 12px;   /* Match controls top */
+    right: 48px;
+    /* Left of fullscreen button */
+    top: 12px;
+    /* Match controls top */
 }
 
 /* Split View Flex Container */
 .split-plot-row {
-     display: flex; 
-     gap: 24px; 
-     min-height: 250px;
+    display: flex;
+    gap: 24px;
+    min-height: 250px;
 }
 
 .hint-overlay {
-    position: absolute; 
-    bottom: 8px; 
-    left: 8px; 
-    font-size: 0.65rem; 
-    color: #888; 
-    pointer-events: none; 
+    position: absolute;
+    bottom: 8px;
+    left: 8px;
+    font-size: 0.65rem;
+    color: #888;
+    pointer-events: none;
     transition: opacity 0.5s;
 }
 
@@ -797,10 +847,10 @@ button.secondary:hover {
 .icon-btn {
     background: rgba(255, 255, 255, 0.9);
     border: 1px solid var(--color-border);
-    border-radius: 8px; 
-    width: 24px;   
-    height: 24px;  
-    box-sizing: border-box; 
+    border-radius: 8px;
+    width: 24px;
+    height: 24px;
+    box-sizing: border-box;
     padding: 0;
     display: flex;
     align-items: center;
@@ -811,26 +861,26 @@ button.secondary:hover {
 }
 
 .icon-btn span {
-    font-size: 18px; 
+    font-size: 18px;
 }
 
 /* New Utilities for Inline Style Replacement */
 .divider-dashed {
-    margin: 12px 0 8px 0; 
-    border-top: 1px dashed var(--color-border); 
+    margin: 12px 0 8px 0;
+    border-top: 1px dashed var(--color-border);
     padding-top: 8px;
 }
 
 .divider-solid {
-    margin-top: 20px; 
-    border-top: 1px solid var(--color-border); 
+    margin-top: 20px;
+    border-top: 1px solid var(--color-border);
     padding-top: 20px;
 }
 
 .label-small {
-    font-size: 0.70rem; 
-    color: #aaa; 
-    text-transform: uppercase; 
+    font-size: 0.70rem;
+    color: #aaa;
+    text-transform: uppercase;
     letter-spacing: 1px;
 }
 
@@ -839,14 +889,14 @@ button.secondary:hover {
 }
 
 .about-text {
-    font-size: 0.75rem; 
-    color: var(--color-text-muted); 
-    line-height: 1.6; 
+    font-size: 0.75rem;
+    color: var(--color-text-muted);
+    line-height: 1.6;
     margin: 0;
 }
 
 .icon-tiny {
-    font-size: 10px !important; 
+    font-size: 10px !important;
     vertical-align: middle;
 }
 
@@ -859,7 +909,7 @@ button.secondary:hover {
 }
 
 .btn-small {
-    width: 24px !important; 
+    width: 24px !important;
     height: 24px !important;
 }
 
@@ -878,6 +928,7 @@ button.secondary:hover {
 .hint-mobile {
     display: none;
 }
+
 .hint-desktop {
     display: inline;
 }
@@ -899,35 +950,37 @@ button.secondary:hover {
         height: 100vh;
         overflow: hidden;
     }
-    
+
     .plots-wrapper {
         flex: 1;
         display: flex;
         flex-direction: column;
         padding: 4px;
         gap: 4px;
-        overflow-y: auto; 
+        overflow-y: auto;
         height: auto;
     }
-    
+
     /* Plot Sizing Ratios */
     #signal-plot-container {
         flex: 1;
         min-height: 80px;
     }
-    
+
     .split-plot-row {
-        flex: 3; /* More height for 3D/Winding */
+        flex: 3;
+        /* More height for 3D/Winding */
         min-height: 150px;
         display: flex;
         flex-direction: row;
         gap: 4px !important;
     }
-    
+
     .split-plot-row .plot-container {
-        flex: 1; /* Side by side */
+        flex: 1;
+        /* Side by side */
     }
-    
+
     #mag-plot-container {
         flex: 1;
         min-height: 80px;
@@ -938,52 +991,62 @@ button.secondary:hover {
         margin-bottom: 0px;
         width: 100%;
     }
-    
-    
+
+
     .sidebar {
-        order: 2; 
+        order: 2;
         width: 100%;
-        height: 30vh; /* Occupy ~25-30% */
+        height: 30vh;
+        /* Occupy ~25-30% */
         flex: 0 0 auto;
         border-right: none;
         border-top: 1px solid var(--color-border);
         z-index: 20;
         padding: 16px;
-        box-shadow: 0 -4px 12px rgba(0,0,0,0.05);
-        display: flex !important; /* Force flex display even if previously hidden */
+        box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.05);
+        display: flex !important;
+        /* Force flex display even if previously hidden */
     }
 
     /* Collapsed State on Mobile - Drawer Style */
     body.sidebar-collapsed .app-container {
-        grid-template-rows: none; /* Reset grid */
+        grid-template-rows: none;
+        /* Reset grid */
     }
+
     body.sidebar-collapsed .plots-wrapper {
         width: 100%;
         height: auto;
-        flex: 1; /* Grow to fill space */
-        padding-bottom: 30px; /* Space for toggle button */
+        flex: 1;
+        /* Grow to fill space */
+        padding-bottom: 30px;
+        /* Space for toggle button */
     }
 
     /* When sidebar collapsed on mobile, stack EVERYTHING vertically */
     body.sidebar-collapsed .split-plot-row {
         flex-direction: column;
-        flex: 6; /* Double the height relative to others basically */
+        flex: 6;
+        /* Double the height relative to others basically */
     }
+
     body.sidebar-collapsed .split-plot-row .plot-container {
         flex: 1;
     }
-    
+
     body.sidebar-collapsed #signal-plot-container,
     body.sidebar-collapsed #mag-plot-container {
-        flex: 2; /* Slightly taller than default 1, relative to split-row's 6 */
+        flex: 2;
+        /* Slightly taller than default 1, relative to split-row's 6 */
     }
 
     body.sidebar-collapsed .sidebar {
         display: none !important;
     }
-    
+
     #toggle-sidebar-btn {
-        position: fixed; /* Fixed to viewport to ensure visibility */
+        position: fixed;
+        /* Fixed to viewport to ensure visibility */
         left: 50%;
         transform: translateX(-50%);
         width: 64px;
@@ -992,13 +1055,15 @@ button.secondary:hover {
         justify-content: center;
         align-items: center;
         border-radius: 12px 12px 0 0;
-        border-bottom: none; 
+        border-bottom: none;
         border: 1px solid var(--color-border);
-        box-shadow: 0 -2px 5px rgba(0,0,0,0.05);
+        box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.05);
         background: white;
         z-index: 1001;
-        transition: none; /* Instant snap */
-        top: auto; /* Override desktop top: 50% */
+        transition: none;
+        /* Instant snap */
+        top: auto;
+        /* Override desktop top: 50% */
     }
 
     /* Button Positioning logic */
@@ -1008,15 +1073,16 @@ button.secondary:hover {
 
     body.sidebar-collapsed #toggle-sidebar-btn {
         bottom: 0;
-        left: 50%; /* Override desktop specificity */
-        
+        left: 50%;
+        /* Override desktop specificity */
+
         /* Reset any desktop sidebar-collapsed overrides */
-        border-radius: 12px 12px 0 0; 
+        border-radius: 12px 12px 0 0;
         border: 1px solid var(--color-border);
         border-bottom: none;
-        box-shadow: 0 -2px 5px rgba(0,0,0,0.05);
+        box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.05);
     }
-    
+
     #toggle-sidebar-btn span {
         font-size: 20px;
         margin: 0;
@@ -1030,11 +1096,12 @@ button.secondary:hover {
         transform: rotate(-90deg);
         margin: 0;
     }
-    
+
     /* Hint Visibility */
     .hint-desktop {
         display: none;
     }
+
     .hint-mobile {
         display: inline;
     }
