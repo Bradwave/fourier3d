@@ -10,9 +10,12 @@ class SignalComponent {
         this.envelopeType = envelopeType;
         this.envelopeParams = {
             gaussian: { center: 0.5, width: 0.2 },
-            adsr: { a: 0.1, d: 0.1, s: 0.5, r: 0.2 }
+            adsr: { a: 0.1, d: 0.1, s: 0.5, r: 0.2 },
+            square: {}
         };
         this.phase = 0;
+        this.waveType = 'sine';
+        this.collapsed = false;
     }
 }
 
@@ -25,6 +28,7 @@ const state = {
     showAxis: true,
     signalMode: 'real',
     audioMultiplier: 50,
+    masterVolume: 0.5,
     ampMultiplier: 1.0,
     fftSampling: 2,
     fftSmoothing: true,
@@ -213,6 +217,8 @@ function loadState() {
             state.components = parsed.components.map(c => {
                 const n = new SignalComponent(c.freq, c.amp);
                 Object.assign(n, c);
+                // Ensure default
+                if (!n.waveType) n.waveType = 'sine';
                 return n;
             });
             if (parsed.audioMultiplier) state.audioMultiplier = parsed.audioMultiplier;
@@ -360,6 +366,19 @@ function setupListeners() {
             }
         });
     });
+
+    // Master Volume
+    const volSlider = document.getElementById('master-vol-slider');
+    const volDisplay = document.getElementById('master-vol-display');
+    if (volSlider && volDisplay) {
+        volSlider.value = state.masterVolume;
+        volDisplay.textContent = state.masterVolume;
+        volSlider.addEventListener('input', (e) => {
+             state.masterVolume = parseFloat(e.target.value);
+             volDisplay.textContent = state.masterVolume;
+             saveState();
+        });
+    }
 
     // Global Keyboard Shortcuts
     window.addEventListener('keydown', (e) => {
@@ -991,10 +1010,30 @@ function renderComponentsUI() {
         el.innerHTML = `
             <div class="component-header">
                 <span>WAVE ${index + 1}</span>
-                <span class="material-symbols-outlined remove-btn" style="font-size: 16px;" onclick="removeComponent(${index})">close</span>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                    <span class="material-symbols-outlined remove-btn" style="font-size: 18px;" onclick="window.toggleCollapse('${comp.id}')">
+                        ${comp.collapsed ? 'expand_more' : 'expand_less'}
+                    </span>
+                    <span class="material-symbols-outlined remove-btn" style="font-size: 16px;" onclick="removeComponent(${index})">close</span>
+                </div>
             </div>
+            ${comp.collapsed ? `
+                <div class="component-collapsed-preview">
+                    <canvas id="col-prev-${comp.id}" width="300" height="40"></canvas>
+                </div>
+            ` : `
             <div class="component-body">
                 <div class="component-controls" style="display: flex; flex-direction: column; gap: 8px;">
+                     <!-- Wave Type Selector -->
+                    <div class="component-control-item" style="width: 100%;">
+                        <div class="segmented-control" style="margin-bottom: 0px; width: 100%;">
+                            <div class="segmented-option ${comp.waveType === 'sine' || !comp.waveType ? 'active' : ''}" onclick="setWaveType('${comp.id}', 'sine')">SINE</div>
+                            <div class="segmented-option ${comp.waveType === 'square' ? 'active' : ''}" onclick="setWaveType('${comp.id}', 'square')">SQR</div>
+                            <div class="segmented-option ${comp.waveType === 'triangle' ? 'active' : ''}" onclick="setWaveType('${comp.id}', 'triangle')">TRI</div>
+                            <div class="segmented-option ${comp.waveType === 'sawtooth' ? 'active' : ''}" onclick="setWaveType('${comp.id}', 'sawtooth')">SAW</div>
+                        </div>
+                    </div>
+
                     <!-- Frequency Row -->
                     <div class="component-control-item" style="width: 100%;">
                         <div class="component-slider-wrapper">
@@ -1037,25 +1076,88 @@ function renderComponentsUI() {
                         <div class="segmented-control" style="margin: 0; width: 120px; transform: scale(0.9);">
                             <div class="segmented-option ${comp.envelopeType === 'gaussian' ? 'active' : ''}" onclick="setEnvelopeType('${comp.id}', 'gaussian')">GAUSS</div>
                             <div class="segmented-option ${comp.envelopeType === 'adsr' ? 'active' : ''}" onclick="setEnvelopeType('${comp.id}', 'adsr')">ADSR</div>
+                            <div class="segmented-option ${comp.envelopeType === 'square' ? 'active' : ''}" onclick="setEnvelopeType('${comp.id}', 'square')">SQR</div>
                         </div>
                     </div>
                     <canvas class="envelope-preview" id="env-prev-${comp.id}" width="200" height="80"></canvas>
                     <div class="envelope-params">${getEnvelopeControls(comp)}</div>
                 </div>
-            </div>`;
+            </div>`}`;
         elements.componentsContainer.appendChild(el);
-        drawComponentPreview(document.getElementById(`preview-${comp.id}`), comp);
-        drawEnvelopePreview(document.getElementById(`env-prev-${comp.id}`), comp);
+        if (comp.collapsed) {
+             drawCollapsedPreview(document.getElementById(`col-prev-${comp.id}`), comp);
+        } else {
+            drawComponentPreview(document.getElementById(`preview-${comp.id}`), comp);
+            drawEnvelopePreview(document.getElementById(`env-prev-${comp.id}`), comp);
+        }
     });
+}
+
+window.toggleCollapse = (id) => {
+    const c = state.components.find(x => x.id === id);
+    if (c) {
+        c.collapsed = !c.collapsed;
+        renderComponentsUI();
+        saveState();
+    }
+};
+
+function drawCollapsedPreview(canvas, comp) {
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const dpr = window.devicePixelRatio || 1;
+    const r = canvas.getBoundingClientRect();
+    canvas.width = r.width * dpr;
+    canvas.height = r.height * dpr;
+    ctx.scale(dpr, dpr);
+    const w = r.width;
+    const h = r.height;
+    ctx.clearRect(0, 0, w, h);
+
+    ctx.beginPath();
+    ctx.strokeStyle = '#1484e6';
+    ctx.lineWidth = 1.5;
+    
+    // Draw 0 to 5s timeline
+    const MAX = 5.0;
+    const yBase = h / 2;
+    const yScale = h / 2.5; // leaving some margin
+    
+    // Optimize: steps?
+    const pixels = w;
+    for (let i = 0; i <= w; i++) {
+        const t = (i / w) * MAX;
+        let val = 0;
+        
+        // Time Constraint & Envelope Logic
+        if (t >= comp.startTime && t <= comp.endTime) {
+            const duration = comp.endTime - comp.startTime;
+            let env = 1;
+            if (duration > 0.01) {
+                const tNorm = (t - comp.startTime) / duration;
+                env = getEnvelopeValue(tNorm, comp.envelopeType, comp.envelopeParams);
+            }
+            const carrier = getWaveValue(t, comp.freq, comp.phase || 0, comp.waveType || 'sine');
+            val = carrier * env * comp.amp;
+        }
+        
+        const y = yBase - val * yScale;
+        
+        if (i === 0) ctx.moveTo(i, y);
+        else ctx.lineTo(i, y);
+    }
+    ctx.stroke();
 }
 
 function getEnvelopeControls(comp) {
     if (comp.envelopeType === 'gaussian') {
         const p = comp.envelopeParams.gaussian;
         return `<div class="param-col span-2"><input type="range" min="0" max="1" step="0.01" value="${p.center}" oninput="updateEnvParam('${comp.id}', 'gaussian', 'center', this.value)"><span class="param-label">CENTER</span></div><div class="param-col span-2"><input type="range" min="0.05" max="0.5" step="0.01" value="${p.width}" oninput="updateEnvParam('${comp.id}', 'gaussian', 'width', this.value)"><span class="param-label">WIDTH</span></div>`;
-    } else {
+    } else if (comp.envelopeType === 'adsr') {
         const p = comp.envelopeParams.adsr;
         return `<div class="param-col"><input type="range" min="0" max="1" step="0.01" value="${p.a}" oninput="updateEnvParam('${comp.id}', 'adsr', 'a', this.value)"><span class="param-label">A</span></div><div class="param-col"><input type="range" min="0" max="1" step="0.01" value="${p.d}" oninput="updateEnvParam('${comp.id}', 'adsr', 'd', this.value)"><span class="param-label">D</span></div> <div class="param-col"><input type="range" min="0" max="1" step="0.01" value="${p.s}" oninput="updateEnvParam('${comp.id}', 'adsr', 's', this.value)"><span class="param-label">S</span></div><div class="param-col"><input type="range" min="0" max="1" step="0.01" value="${p.r}" oninput="updateEnvParam('${comp.id}', 'adsr', 'r', this.value)"><span class="param-label">R</span></div>`;
+    } else {
+        return `<div class="param-col" style="grid-column: span 4; text-align: center;"><span class="param-label">SQUARE ENVELOPE (FULL AMPLITUDE)</span></div>`;
     }
 }
 
@@ -1074,10 +1176,35 @@ function drawComponentPreview(canvas, comp) {
     ctx.moveTo(0, r.height / 2);
     for (let x = 0; x <= r.width; x++) {
         const t = (x / r.width) * 1.0;
-        const val = comp.amp * Math.cos(2 * Math.PI * comp.freq * t + (comp.phase || 0));
+        const val = comp.amp * getWaveValue(t, comp.freq, comp.phase || 0, comp.waveType || 'sine');
         ctx.lineTo(x, r.height / 2 - (val / 2.5) * (r.height / 2));
     }
     ctx.stroke();
+}
+
+window.setWaveType = (id, type) => {
+    const c = state.components.find(x => x.id === id);
+    if (c) {
+        c.waveType = type;
+        renderComponentsUI();
+        saveState();
+    }
+};
+
+function getWaveValue(t, freq, phase, type) {
+    const angle = 2 * Math.PI * freq * t + phase;
+    switch (type) {
+        case 'square':
+            return Math.sign(Math.cos(angle));
+        case 'triangle':
+            return (2 / Math.PI) * Math.asin(Math.cos(angle));
+        case 'sawtooth':
+            const normAngle = (freq * t + phase / (2 * Math.PI));
+            return 2 * (normAngle - Math.floor(normAngle + 0.5));
+        case 'sine':
+        default:
+            return Math.cos(angle);
+    }
 }
 
 function drawEnvelopePreview(canvas, comp) {
@@ -1106,7 +1233,7 @@ function drawEnvelopePreview(canvas, comp) {
     for (let x = 0; x <= w; x++) {
         const t = x / w;
         const env = getEnvelopeValue(t, comp.envelopeType, comp.envelopeParams);
-        const carrier = Math.cos(2 * Math.PI * comp.freq * t + (comp.phase || 0));
+        const carrier = getWaveValue(t, comp.freq, comp.phase || 0, comp.waveType || 'sine');
         const val = Math.abs(carrier) * env; 
         const y = h - (val * h * 0.9) - 2;
         if (x === 0) ctx.moveTo(x, y);
@@ -1135,6 +1262,8 @@ function getEnvelopeValue(tNorm, type, params) {
         const num = Math.pow(tNorm - p.center, 2);
         const den = 2 * Math.pow(p.width, 2);
         return Math.exp(-num / den);
+    } else if (type === 'square') {
+        return 1.0;
     } else {
         const p = params.adsr;
         const t = tNorm;
@@ -1154,7 +1283,7 @@ function getSignalValueAt(t) {
             const tNorm = (t - comp.startTime) / duration;
             ampOffset = getEnvelopeValue(tNorm, comp.envelopeType, comp.envelopeParams);
         }
-        val += comp.amp * Math.cos(2 * Math.PI * comp.freq * t + (comp.phase || 0)) * ampOffset;
+        val += comp.amp * getWaveValue(t, comp.freq, comp.phase || 0, comp.waveType || 'sine') * ampOffset;
     });
     return val * state.ampMultiplier;
 }
@@ -2281,7 +2410,7 @@ function generateAudioBuffer() {
         const t = i / sr; // Audio Time
         let val = 0;
         state.components.forEach(comp => {
-            let compVal = comp.amp * Math.cos(2 * Math.PI * (comp.freq * K) * t + (comp.phase || 0));
+            let compVal = comp.amp * getWaveValue(t, comp.freq * K, comp.phase || 0, comp.waveType || 'sine');
 
             // Apply envelope (Always 'real' mode effectively in this app logic)
             if (t < comp.startTime || t > comp.endTime) {
@@ -2295,7 +2424,7 @@ function generateAudioBuffer() {
             }
             val += compVal;
         });
-        data[i] = Math.tanh(val * 0.5);
+        data[i] = Math.tanh(val * 0.5) * state.masterVolume;
     }
 
     return buffer;
