@@ -56,6 +56,12 @@ body {
     background-color: var(--color-bg);
     color: var(--color-text-main);
     overflow: hidden;
+    opacity: 0;
+    transition: opacity 0.4s ease;
+}
+
+body.loaded {
+    opacity: 1;
 }
 
 /* Scrollbar */
@@ -179,6 +185,10 @@ header p {
 }
 
 .section-header-collapsible:hover .section-title {
+    color: var(--color-accent);
+}
+
+.section-header-collapsible:hover .dropdown-icon {
     color: var(--color-accent);
 }
 
@@ -1074,6 +1084,7 @@ button.secondary:hover {
     body.sidebar-collapsed #toggle-sidebar-btn {
         bottom: 0;
         left: 50%;
+        transform: translateX(-50%);
         /* Override desktop specificity */
 
         /* Reset any desktop sidebar-collapsed overrides */
@@ -1085,6 +1096,7 @@ button.secondary:hover {
 
     #toggle-sidebar-btn span {
         font-size: 20px;
+        transform: rotate(-90deg) !important;
         margin: 0;
     }
 

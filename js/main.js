@@ -208,7 +208,8 @@ function saveState() {
         showPlane: state.showPlane,
         viewAbs: state.viewAbs,
         isFocusMode: state.isFocusMode,
-        isSidebarCollapsed: state.isSidebarCollapsed
+        isSidebarCollapsed: state.isSidebarCollapsed,
+        collapsedSections: Array.from(document.querySelectorAll('.collapsible-content')).filter(el => !el.classList.contains('expanded')).map(el => el.id)
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(saved));
 }
@@ -248,6 +249,21 @@ function loadState() {
             if (parsed.viewAbs) state.viewAbs = parsed.viewAbs;
             if (parsed.isSidebarCollapsed !== undefined) state.isSidebarCollapsed = parsed.isSidebarCollapsed;
             if (parsed.isFocusMode !== undefined) state.isFocusMode = parsed.isFocusMode;
+
+            // Restore Collapsed Sections
+            if (parsed.collapsedSections && Array.isArray(parsed.collapsedSections)) {
+                parsed.collapsedSections.forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) {
+                        el.classList.remove('expanded');
+                        const header = document.querySelector(`.section-header-collapsible[data-target="${id}"]`);
+                        if(header) {
+                            const icon = header.querySelector('.dropdown-icon');
+                            if(icon) icon.classList.add('collapsed');
+                        }
+                    }
+                });
+            }
 
         } catch (e) { console.error(e); }
     }
@@ -370,6 +386,7 @@ function setupListeners() {
                 target.classList.toggle('expanded');
                 const icon = header.querySelector('.dropdown-icon');
                 if (icon) icon.classList.toggle('collapsed', !target.classList.contains('expanded'));
+                saveState();
             }
         });
     });
@@ -2578,5 +2595,10 @@ window.importComponents = (input) => {
     reader.readAsText(file);
     input.value = ''; 
 };
+
+// Fade In
+window.addEventListener('load', () => {
+    setTimeout(() => { document.body.classList.add('loaded'); }, 50);
+});
 
 init();
