@@ -1121,6 +1121,7 @@ function renderComponentsUI() {
                         <div class="segmented-control envelope-type-control">
                             <div class="segmented-option ${comp.envelopeType === 'gaussian' ? 'active' : ''}" onclick="setEnvelopeType('${comp.id}', 'gaussian')">GAUSS</div>
                             <div class="segmented-option ${comp.envelopeType === 'adsr' ? 'active' : ''}" onclick="setEnvelopeType('${comp.id}', 'adsr')">ADSR</div>
+                            <div class="segmented-option ${comp.envelopeType === 'hann' ? 'active' : ''}" onclick="setEnvelopeType('${comp.id}', 'hann')">HANN</div>
                             <div class="segmented-option ${comp.envelopeType === 'square' ? 'active' : ''}" onclick="setEnvelopeType('${comp.id}', 'square')">SQR</div>
                         </div>
                     </div>
@@ -1213,6 +1214,8 @@ function getEnvelopeControls(comp) {
     } else if (comp.envelopeType === 'adsr') {
         const p = comp.envelopeParams.adsr;
         return `<div class="param-col"><input type="range" min="0" max="1" step="0.01" value="${p.a}" oninput="updateEnvParam('${comp.id}', 'adsr', 'a', this.value)"><span class="param-label">A</span></div><div class="param-col"><input type="range" min="0" max="1" step="0.01" value="${p.d}" oninput="updateEnvParam('${comp.id}', 'adsr', 'd', this.value)"><span class="param-label">D</span></div> <div class="param-col"><input type="range" min="0" max="1" step="0.01" value="${p.s}" oninput="updateEnvParam('${comp.id}', 'adsr', 's', this.value)"><span class="param-label">S</span></div><div class="param-col"><input type="range" min="0" max="1" step="0.01" value="${p.r}" oninput="updateEnvParam('${comp.id}', 'adsr', 'r', this.value)"><span class="param-label">R</span></div>`;
+    } else if (comp.envelopeType === 'hann') {
+        return `<div class="param-col" style="grid-column: span 4; text-align: center;"><span class="param-label">HANN WINDOW (FULL DURATION)</span></div>`;
     } else {
         return `<div class="param-col" style="grid-column: span 4; text-align: center;"><span class="param-label">SQUARE ENVELOPE (FULL AMPLITUDE)</span></div>`;
     }
@@ -1326,6 +1329,8 @@ function getEnvelopeValue(tNorm, type, params) {
         const num = Math.pow(tNorm - p.center, 2);
         const den = 2 * Math.pow(p.width, 2);
         return Math.exp(-num / den);
+    } else if (type === 'hann') {
+        return 0.5 * (1 - Math.cos(2 * Math.PI * tNorm));
     } else if (type === 'square') {
         return 1.0;
     } else {
@@ -1604,10 +1609,15 @@ function animate() {
         comIm = fftResult[idx].im / (N_Base / 2);
     }
 
-    let maxCompFreq = 0; state.components.forEach(c => { if (c.freq > maxCompFreq) maxCompFreq = c.freq; });
+    let maxCompFreq = 0; 
+    state.components.forEach(c => { 
+        let f = c.freq;
+        if(c.isChirp) f = Math.max(c.freqStart, c.freqEnd);
+        if (f > maxCompFreq) maxCompFreq = f; 
+    });
 
-    // Strict 1.5x Limit calculation
-    const strictMaxFreq = Math.max(20, Math.ceil(maxCompFreq * 1.5));
+    // Strict 1.25x Limit calculation
+    const strictMaxFreq = Math.max(20, Math.ceil(maxCompFreq * 1.25));
 
     // If endFreq is 0 (auto), use the limit. If it's set, clamp it to the limit.
     const maxDisplayFreq = state.viewAbs.endFreq > 0 ? Math.min(state.viewAbs.endFreq, strictMaxFreq) : strictMaxFreq;
